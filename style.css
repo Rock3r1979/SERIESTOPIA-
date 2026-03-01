@@ -1,120 +1,77 @@
 body {
-  background: #0f0f0f;
-  color: white;
-  font-family: Arial, sans-serif;
-  margin: 0;
+  background:#0f0f0f;
+  color:white;
+  font-family:Arial,sans-serif;
+  margin:0;
 }
 
 header {
-  background: #1a1a1a;
-  padding: 12px;
-  text-align: center;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  background:#1a1a1a;
+  padding:12px;
+  text-align:center;
+  position:sticky;
+  top:0;
+  z-index:100;
 }
 
 nav button {
-  margin: 4px;
-  padding: 6px 10px;
-  border: none;
-  background: #e50914;
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.8rem;
+  margin:4px;
+  padding:6px 10px;
+  border:none;
+  background:#e50914;
+  color:white;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:0.8rem;
 }
 
-.seccion {
-  display: none;
-  padding: 15px;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-
+.seccion { display:none; padding:15px; }
+.grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
 .card {
-  background: #181818;
-  border-radius: 10px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: 0.3s;
+  background:#181818;
+  border-radius:10px;
+  overflow:hidden;
+  cursor:pointer;
+  transition:0.3s;
 }
-
-.card:hover {
-  transform: scale(1.05);
-}
-
-.card img {
-  width: 100%;
-  height: 170px;
-  object-fit: cover;
-}
-
-.card h4 {
-  font-size: 0.8rem;
-  text-align: center;
-  margin: 6px;
-}
-
-.card p {
-  text-align: center;
-  font-size: 0.75rem;
-  color: #bbb;
-}
+.card:hover { transform:scale(1.05); }
+.card img { width:100%; height:170px; object-fit:cover; }
+.card h4 { font-size:0.8rem; text-align:center; margin:6px; }
+.card p { text-align:center; font-size:0.75rem; color:#bbb; }
 
 .modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.9);
-  z-index: 200;
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.9);
+  z-index:200;
 }
-
 .modal-content {
-  background: #222;
-  margin: 5% auto;
-  padding: 20px;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 650px;
+  background:#222;
+  margin:5% auto;
+  padding:20px;
+  border-radius:12px;
+  width:90%;
+  max-width:700px;
 }
+.close { float:right; font-size:24px; cursor:pointer; }
 
-.close {
-  float: right;
-  font-size: 24px;
-  cursor: pointer;
-}
-
-#plataformasContainer img {
-  width: 35px;
-  margin: 5px;
-}
-
-#trailerContainer iframe {
-  width: 100%;
-  height: 250px;
-  margin-top: 10px;
-  border-radius: 8px;
-}
+#plataformasContainer img { width:35px; margin:5px; }
+#trailerContainer iframe { width:100%; height:250px; margin-top:10px; border-radius:8px; }
+#temporadasContainer { margin-top:12px; }
+#estrellasSerie { margin-top:8px; display:flex; }
+.star { font-size:20px; cursor:pointer; color:#444; margin-right:4px; }
+.star.active { color:#ffd700; }
 
 #notificaciones {
-  text-align: center;
-  background: #e50914;
-  padding: 6px;
-  font-size: 0.8rem;
+  text-align:center;
+  background:#e50914;
+  padding:6px;
+  font-size:0.8rem;
 }
 
-#exportImport {
-  text-align: center;
-  padding: 15px;
-}
+#exportImport { text-align:center; padding:15px; }
 
-@media (max-width: 600px) {
-  .grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
+#calendarioContainer { padding:15px; text-align:center; }
+
+@media (max-width:600px){ .grid{grid-template-columns:repeat(2,1fr);} }
