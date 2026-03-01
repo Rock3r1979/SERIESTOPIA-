@@ -9,6 +9,19 @@ const contenedorBuscar=document.getElementById("contenedorBuscar");
 let miLista=JSON.parse(localStorage.getItem("miLista"))||[];
 let alertas=JSON.parse(localStorage.getItem("alertas"))||[];
 
+// DEMO alertas visibles
+if(!localStorage.getItem("alertas")){
+  const hoy = new Date();
+  const mañana = new Date();
+  mañana.setDate(hoy.getDate()+1);
+  const demoAlertas = [
+    {id: 12345, title: "Wild Link T3", fecha: mañana.toISOString().split("T")[0]},
+    {id: 67890, title: "Serie Demo X", fecha: hoy.toISOString().split("T")[0]}
+  ];
+  localStorage.setItem("alertas", JSON.stringify(demoAlertas));
+  alertas = demoAlertas;
+}
+
 // Mostrar sección
 function mostrarSeccion(id){
   document.querySelectorAll('.seccion').forEach(s=>s.style.display='none');
@@ -34,7 +47,7 @@ function mostrarResultados(items, contenedor){
   });
 }
 
-// Cargar plataformas en tarjeta
+// Cargar plataformas
 function cargarPlataformas(id, tipo){
   fetch(`https://api.themoviedb.org/3/${tipo}/${id}/watch/providers?api_key=${apiKey}`)
     .then(r=>r.json())
@@ -110,7 +123,6 @@ function abrirModal(item){
   trailerContainer.innerHTML="";
   plataformasContainer.innerHTML="";
 
-  // Plataformas en modal
   fetch(`https://api.themoviedb.org/3/${item.media_type||'movie'}/${item.id}/watch/providers?api_key=${apiKey}`)
     .then(r=>r.json())
     .then(d=>{
@@ -204,8 +216,25 @@ function exportarAlertas(){
   document.body.appendChild(a); a.click(); a.remove();
 }
 
+// Cargar lista pública desde URL
+function cargarListaUsuario(){
+  const params = new URLSearchParams(window.location.search);
+  const urlLista = params.get('lista'); // ?lista=<URL_JSON>
+  if(urlLista){
+    fetch(urlLista)
+      .then(r=>r.json())
+      .then(data=>{
+        miLista=data;
+        localStorage.setItem("miLista", JSON.stringify(miLista));
+        mostrarMiLista();
+        cargarAgenda();
+      });
+  }
+}
+
 // Inicialización
 window.onload=()=>{
+  cargarListaUsuario();
   cargarTendencias();
   cargarEstrenos();
   cargarAgenda();
