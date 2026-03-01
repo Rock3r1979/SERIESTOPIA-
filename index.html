@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SERIESTOPIA PRO+</title>
+  <title>SERIESTOPIA</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 
 <header>
-  <h1>🎬 SERIESTOPIA PRO+</h1>
+  <h1>🎬 SERIESTOPIA</h1>
   <nav>
-    <button onclick="mostrarSeccion('tendencias')">🔥 Tendencias</button>
-    <button onclick="mostrarSeccion('estrenos')">📅 Próximos Estrenos</button>
+    <button onclick="mostrarSeccion('peliculas')">🎥 Películas</button>
+    <button onclick="mostrarSeccion('series')">📺 Series</button>
     <button onclick="mostrarSeccion('agenda')">🗓 Agenda</button>
     <button onclick="mostrarSeccion('miLista')">📌 Mi Lista</button>
     <button onclick="mostrarSeccion('buscar')">🔍 Buscar</button>
@@ -30,31 +30,23 @@
   <div id="contenedorBuscar" class="grid"></div>
 </section>
 
-<section id="tendencias" class="seccion grid"></section>
-<section id="estrenos"  class="seccion grid"></section>
-<section id="agenda"    class="seccion grid"></section>
-<section id="miLista"  class="seccion grid"></section>
+<section id="peliculas" class="seccion grid"></section>
+<section id="series" class="seccion grid"></section>
+<section id="agenda" class="seccion grid"></section>
+<section id="miLista" class="seccion grid"></section>
 
-<!-- Modal de detalle -->
+<!-- Modal detalle -->
 <div id="modal" class="modal">
   <div class="modal-content">
     <span id="cerrar" class="close">&times;</span>
     <div id="detalle"></div>
     <div id="acciones">
       <button id="agregarLista">Agregar a Mi Lista</button>
-      <label>Puntuación:
-        <select id="puntuacion">
-          <option value="0">0</option>
-          <option value="1">1⭐</option>
-          <option value="2">2⭐</option>
-          <option value="3">3⭐</option>
-          <option value="4">4⭐</option>
-          <option value="5">5⭐</option>
-        </select>
-      </label>
+      <div id="estrellasSerie"></div>
       <button id="recordar">📌 Recordarme</button>
       <button id="verTrailer">🎥 Ver Trailer</button>
     </div>
+    <div id="temporadasContainer"></div>
     <div id="trailerContainer"></div>
     <div id="plataformasContainer"></div>
   </div>
@@ -62,12 +54,14 @@
 
 <div id="exportImport">
   <button onclick="exportarLista()">💾 Exportar Mi Lista</button>
-  <label for="importFile" style="margin-left: 0.5rem;">Importar Mi Lista</label>
+  <label for="importFile" style="margin-left:0.5rem;">Importar Mi Lista</label>
   <input type="file" id="importFile" accept=".json" onchange="importarLista(event)">
   <button onclick="exportarAlertas()">💌 Exportar Alertas</button>
+  <button onclick="compartirLista()">🔗 Compartir Mi Lista</button>
 </div>
 
-<script src="./script.js"></script>
+<div id="calendarioContainer"></div>
 
+<script src="./script.js"></script>
 </body>
 </html>
