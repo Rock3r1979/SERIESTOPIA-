@@ -1,163 +1,221 @@
-const API_KEY = "bc2f8428b1238d724f9003cbf430ccee";
-const BASE_URL = "https://api.themoviedb.org/3";
-
+const APIKEY = 'bc2f8428b1238d724f9003cbf430ccee';
+const BASEURL = 'https://api.themoviedb.org/3/';
 let itemActual = null;
 let peliculasPage = 1, seriesPage = 1;
 let buscando = false, busquedaPage = 1;
-let currentSearch = "";
-let filtroSeries = "latest"; // latest, popular, top, lista
-let filtroPeliculas = "latest";
+let currentSearch;
+let filtroSeries = 'latest'; // latest, popular, top, lista
+let filtroPeliculas = 'latest';
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener('DOMContentLoaded', () => {
   cargarPeliculas();
   cargarSeries();
-  mostrarSeccion("series"); // por defecto mostrar series
+  mostrarSeccion('series'); // por defecto mostrar series
   comprobarRecordatorios();
-
-  document.getElementById("cerrar").onclick = cerrarModal;
-  document.getElementById("agregarLista").onclick = agregarMiLista;
-  document.getElementById("recordar").onclick = guardarRecordatorio;
-  document.getElementById("verTrailer").onclick = verTrailer;
-
-  window.addEventListener("scroll", () => {
-    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 10) {
-      if (document.getElementById("peliculas").style.display === "grid") cargarPeliculas();
-      if (document.getElementById("series").style.display === "grid") cargarSeries();
-      if (buscando) buscar(true);
-    }
-  });
 });
+
+document.getElementById('cerrar').onclick = cerrarModal;
+document.getElementById('agregarLista').onclick = agregarMiLista;
+document.getElementById('recordar').onclick = guardarRecordatorio;
+document.getElementById('verTrailer').onclick = verTrailer;
+
+window.addEventListener('scroll', () => {
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 10) {
+    if (document.getElementById('peliculas').style.display === 'grid') cargarPeliculas();
+    if (document.getElementById('series').style.display === 'grid') cargarSeries();
+    if (buscando) buscar(true);
+  }
+});
+
+// FUNCIONES PARA FORMATEAR FECHAS - NUEVAS
+function formatDate(fechaStr) {
+  if (!fechaStr) return 'Desconocida';
+  const partes = fechaStr.split('-');
+  if (partes.length === 3) {
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  }
+  return fechaStr;
+}
+
+function parseDateStrict(fechaStr) {
+  if (!fechaStr) return new Date('9999-12-31');
+  const partes = fechaStr.split('-');
+  if (partes.length === 3 && partes[0] >= '1900') {
+    return new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+  }
+  return new Date('9999-12-31');
+}
 
 // Mostrar sección
 function mostrarSeccion(id) {
-  document.querySelectorAll(".seccion").forEach(s => s.style.display = "none");
-  document.getElementById(id).style.display = "grid";
-  if (id === "miLista") cargarMiLista();
-  if (id === "agenda") cargarAgenda();
-  if (id === "buscar") document.getElementById("contenedorBuscar").innerHTML = "";
+  document.querySelectorAll('.seccion').forEach(s => s.style.display = 'none');
+  document.getElementById(id).style.display = 'grid';
+  
+  if (id === 'miLista') cargarMiLista();
+  if (id === 'agenda') cargarAgenda();
+  if (id === 'buscar') document.getElementById('contenedorBuscar').innerHTML = '';
+  
+  // NUEVO: Cargar datos específicos para tendencias y estrenos
+  if (id === 'tendencias') {
+    cargarTendencias();
+  }
+  if (id === 'estrenos') {
+    cargarEstrenos();
+  }
 }
 
-// ---------- SERIES Y PELÍCULAS ----------
+// NUEVA: Cargar tendencias (trending all)
+async function cargarTendencias() {
+  const contenedor = document.getElementById('tendencias');
+  contenedor.innerHTML = '<p>Cargando tendencias...</p>';
+  try {
+    const res = await fetch(`${BASEURL}trending/all/week?api_key=${APIKEY}&language=es-ES`);
+    const data = await res.json();
+    mostrarResultados(data.results, 'tendencias');
+  } catch (e) {
+    contenedor.innerHTML = '<p>Error al cargar tendencias.</p>';
+  }
+}
 
+// NUEVA: Cargar próximos estrenos (upcoming movies + ontheair series)
+async function cargarEstrenos() {
+  const contenedor = document.getElementById('estrenos');
+  contenedor.innerHTML = '<p>Cargando próximos estrenos...</p>';
+  try {
+    const [pelisRes, seriesRes] = await Promise.all([
+      fetch(`${BASEURL}movie/upcoming?api_key=${APIKEY}&language=es-ES&page=1`),
+      fetch(`${BASEURL}tv/on_the_air?api_key=${APIKEY}&language=es-ES&page=1`)
+    ]);
+    const pelis = await pelisRes.json();
+    const series = await seriesRes.json();
+    const items = [...pelis.results, ...series.results];
+    mostrarResultados(items.slice(0, 20), 'estrenos'); // Top 20
+  } catch (e) {
+    contenedor.innerHTML = '<p>Error al cargar estrenos.</p>';
+  }
+}
+
+// SERIES Y PELÍCULAS
 async function cargarPeliculas() {
   let url;
-  if (filtroPeliculas === "lista") {
-    const lista = JSON.parse(localStorage.getItem("miLista")) || [];
-    mostrarResultados(lista.filter(i => i.title), "peliculas");
+  if (filtroPeliculas === 'lista') {
+    const lista = JSON.parse(localStorage.getItem('miLista') || '[]');
+    mostrarResultados(lista.filter(i => i.title), 'peliculas');
     return;
   }
-  if (filtroPeliculas === "latest") url = `${BASE_URL}/movie/now_playing?api_key=${API_KEY}&language=es-ES&page=${peliculasPage}`;
-  if (filtroPeliculas === "popular") url = `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=es-ES&page=${peliculasPage}`;
-  if (filtroPeliculas === "top") url = `${BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=es-ES&page=${peliculasPage}`;
-
+  if (filtroPeliculas === 'latest') url = `${BASEURL}movie/now_playing?api_key=${APIKEY}&language=es-ES&page=${peliculasPage}`;
+  if (filtroPeliculas === 'popular') url = `${BASEURL}movie/popular?api_key=${APIKEY}&language=es-ES&page=${peliculasPage}`;
+  if (filtroPeliculas === 'top') url = `${BASEURL}movie/top_rated?api_key=${APIKEY}&language=es-ES&page=${peliculasPage}`;
+  
   const res = await fetch(url);
   const data = await res.json();
   peliculasPage++;
-  mostrarResultados(data.results, "peliculas");
+  mostrarResultados(data.results, 'peliculas');
 }
 
 async function cargarSeries() {
   let url;
-  if (filtroSeries === "lista") {
-    const lista = JSON.parse(localStorage.getItem("miLista")) || [];
-    mostrarResultados(lista.filter(i => i.name), "series");
+  if (filtroSeries === 'lista') {
+    const lista = JSON.parse(localStorage.getItem('miLista') || '[]');
+    mostrarResultados(lista.filter(i => i.name), 'series');
     return;
   }
-  if (filtroSeries === "latest") url = `${BASE_URL}/tv/on_the_air?api_key=${API_KEY}&language=es-ES&page=${seriesPage}`;
-  if (filtroSeries === "popular") url = `${BASE_URL}/tv/popular?api_key=${API_KEY}&language=es-ES&page=${seriesPage}`;
-  if (filtroSeries === "top") url = `${BASE_URL}/tv/top_rated?api_key=${API_KEY}&language=es-ES&page=${seriesPage}`;
-
+  if (filtroSeries === 'latest') url = `${BASEURL}tv/on_the_air?api_key=${APIKEY}&language=es-ES&page=${seriesPage}`;
+  if (filtroSeries === 'popular') url = `${BASEURL}tv/popular?api_key=${APIKEY}&language=es-ES&page=${seriesPage}`;
+  if (filtroSeries === 'top') url = `${BASEURL}tv/top_rated?api_key=${APIKEY}&language=es-ES&page=${seriesPage}`;
+  
   const res = await fetch(url);
   const data = await res.json();
   seriesPage++;
-  mostrarResultados(data.results, "series");
+  mostrarResultados(data.results, 'series');
 }
 
 function mostrarResultados(items, contenedorId) {
   const cont = document.getElementById(contenedorId);
+  if (items.length === 0) {
+    cont.innerHTML = '<p>No hay resultados.</p>';
+    return;
+  }
   items.forEach(item => {
     if (!item.poster_path) return;
-    const div = document.createElement("div");
-    div.classList.add("card");
+    const div = document.createElement('div');
+    div.classList.add('card');
     div.innerHTML = `
       <img src="https://image.tmdb.org/t/p/w300${item.poster_path}">
       <h4>${item.title || item.name}</h4>
-      <p>⭐ ${item.vote_average}</p>
+      <p>${item.vote_average?.toFixed(1) || 'N/A'}</p>
+      <p>${formatDate(item.release_date || item.first_air_date)}</p>  <!-- CORREGIDO: Usa formatDate -->
     `;
     div.onclick = () => abrirModal(item);
     cont.appendChild(div);
   });
 }
 
-// ---------- MODAL DETALLE ----------
-
+// MODAL DETALLE - CORREGIDO
 function abrirModal(item) {
   itemActual = item;
-  document.getElementById("detalle").innerHTML = `
+  document.getElementById('detalle').innerHTML = `
     <h2>${item.title || item.name}</h2>
-    <p>${item.overview || "Sin descripción"}</p>
-    <p>📅 ${item.release_date || item.first_air_date || ""}</p>
+    <p>${item.overview || 'Sin descripción'}</p>
+    <p>Fecha: ${formatDate(item.release_date || item.first_air_date)}</p>  <!-- CORREGIDO -->
   `;
-  document.getElementById("temporadasContainer").innerHTML = "";
+  document.getElementById('temporadasContainer').innerHTML = '';
   dibujarEstrellas(item);
-  cargarPlataformas(item.id, item.media_type || (item.title ? "movie" : "tv"));
-  if (item.first_air_date) cargarTemporadas(item); // series
-  document.getElementById("modal").style.display = "block";
+  cargarPlataformas(item.id, item.title ? 'movie' : 'tv');
+  if (item.first_air_date) cargarTemporadas(item); // Solo series
+  document.getElementById('modal').style.display = 'block';
 }
 
 function cerrarModal() {
-  document.getElementById("modal").style.display = "none";
-  document.getElementById("trailerContainer").innerHTML = "";
-  document.getElementById("temporadasContainer").innerHTML = "";
+  document.getElementById('modal').style.display = 'none';
+  document.getElementById('trailerContainer').innerHTML = '';
+  document.getElementById('temporadasContainer').innerHTML = '';
 }
 
-// ---------- PLATAFORMAS ----------
-
+// PLATAFORMAS
 async function cargarPlataformas(id, tipo) {
-  const res = await fetch(`${BASE_URL}/${tipo}/${id}/watch/providers?api_key=${API_KEY}`);
+  const res = await fetch(`${BASEURL}${tipo}/${id}/watch/providers?api_key=${APIKEY}`);
   const data = await res.json();
-  const cont = document.getElementById("plataformasContainer");
-  cont.innerHTML = "";
+  const cont = document.getElementById('plataformasContainer');
+  cont.innerHTML = '';
   if (data.results?.ES?.flatrate) {
     data.results.ES.flatrate.forEach(p => {
-      const img = document.createElement("img");
-      img.src = "https://image.tmdb.org/t/p/w45" + p.logo_path;
+      const img = document.createElement('img');
+      img.src = `https://image.tmdb.org/t/p/w45/${p.logo_path}`;
       img.title = p.provider_name;
       cont.appendChild(img);
     });
-  } else cont.innerHTML = "<p>No disponible en España</p>";
+  } else {
+    cont.innerHTML = '<p>No disponible en España</p>';
+  }
 }
 
-// ---------- TEMPORADAS Y CAPÍTULOS EXPANDIBLES ----------
-
+// TEMPORADAS (resto igual, pero con formatDate en episodios si necesitas)
 let temporadaAbierta = null;
-
 async function cargarTemporadas(item) {
-  const res = await fetch(`${BASE_URL}/tv/${item.id}?api_key=${API_KEY}&language=es-ES`);
+  const res = await fetch(`${BASEURL}tv/${item.id}?api_key=${APIKEY}&language=es-ES`);
   const data = await res.json();
-  const container = document.getElementById("temporadasContainer");
+  const container = document.getElementById('temporadasContainer');
   data.seasons.filter(s => s.season_number > 0).forEach(season => {
-    const div = document.createElement("div");
-    div.classList.add("temporada");
+    const div = document.createElement('div');
+    div.classList.add('temporada');
     div.innerHTML = `<h4>Temporada ${season.season_number} (${season.episode_count} capítulos)</h4>`;
-    div.style.cursor = "pointer";
+    div.style.cursor = 'pointer';
     div.onclick = async () => {
       if (temporadaAbierta && temporadaAbierta !== div) {
-        temporadaAbierta.querySelector("ul")?.remove();
+        temporadaAbierta.querySelector('ul')?.remove();
+        temporadaAbierta = div;
       }
-      temporadaAbierta = div;
-      const ulExistente = div.querySelector("ul");
+      const ulExistente = div.querySelector('ul');
       if (ulExistente) {
         ulExistente.remove(); // colapsa si ya está abierto
       } else {
-        const resEp = await fetch(`${BASE_URL}/tv/${item.id}/season/${season.season_number}?api_key=${API_KEY}&language=es-ES`);
+        const resEp = await fetch(`${BASEURL}tv/${item.id}/season/${season.season_number}?api_key=${APIKEY}&language=es-ES`);
         const dataEp = await resEp.json();
-        const ul = document.createElement("ul");
+        const ul = document.createElement('ul');
         dataEp.episodes.forEach(ep => {
-          const li = document.createElement("li");
-          li.innerHTML = `${ep.episode_number} - ${ep.name} 📅 ${ep.air_date || "?"}
-            <div class="estrellasCapitulo" data-tv="${item.id}" data-season="${season.season_number}" data-ep="${ep.episode_number}"></div>
-          `;
+          const li = document.createElement('li');
+          li.innerHTML = `${ep.episode_number} - ${ep.name} ${formatDate(ep.air_date)} <div class="estrellasCapitulo" data-tv="${item.id}" data-season="${season.season_number}" data-ep="${ep.episode_number}"></div>`;
           ul.appendChild(li);
         });
         div.appendChild(ul);
@@ -168,46 +226,50 @@ async function cargarTemporadas(item) {
   });
 }
 
-// ---------- ESTRELLAS Y PUNTUACIONES ----------
-
+// ESTRELLAS (igual)
 function dibujarEstrellas(item) {
-  const container = document.getElementById("estrellasSerie");
-  container.innerHTML = "";
+  const container = document.getElementById('estrellasSerie');
+  container.innerHTML = '';
   for (let i = 1; i <= 5; i++) {
-    const star = document.createElement("span");
-    star.classList.add("star");
-    star.innerHTML = "★";
-    star.onclick = () => { puntuarSerie(item, i); dibujarEstrellas(item); };
-    const lista = JSON.parse(localStorage.getItem("miLista")) || [];
+    const star = document.createElement('span');
+    star.classList.add('star');
+    star.innerHTML = '⭐';
+    star.onclick = () => puntuarSerie(item, i);
+    const lista = JSON.parse(localStorage.getItem('miLista') || '[]');
     const s = lista.find(x => x.id === item.id);
-    if (s && s.miPuntuacion >= i) star.classList.add("active");
+    if (s && s.miPuntuacion >= i) star.classList.add('active');
     container.appendChild(star);
   }
 }
 
 function puntuarSerie(item, p) {
-  let lista = JSON.parse(localStorage.getItem("miLista")) || [];
+  let lista = JSON.parse(localStorage.getItem('miLista') || '[]');
   let s = lista.find(x => x.id === item.id);
-  if (!s) { item.miPuntuacion = p; lista.push(item); } else s.miPuntuacion = p;
-  localStorage.setItem("miLista", JSON.stringify(lista));
+  if (!s) {
+    item.miPuntuacion = p;
+    lista.push(item);
+  } else {
+    s.miPuntuacion = p;
+  }
+  localStorage.setItem('miLista', JSON.stringify(lista));
 }
 
 function dibujarEstrellasCapitulos() {
-  document.querySelectorAll(".estrellasCapitulo").forEach(div => {
-    const tvId = div.dataset.tv * 1;
-    const season = div.dataset.season * 1;
-    const ep = div.dataset.ep * 1;
-    div.innerHTML = "";
+  document.querySelectorAll('.estrellasCapitulo').forEach(div => {
+    const tvId = div.dataset.tv;
+    const season = div.dataset.season;
+    const ep = div.dataset.ep;
+    div.innerHTML = '';
     for (let i = 1; i <= 5; i++) {
-      const star = document.createElement("span");
-      star.classList.add("star");
-      star.innerHTML = "★";
-      star.onclick = () => { puntuarCapitulo(tvId, season, ep, i); dibujarEstrellasCapitulos(); };
-      const lista = JSON.parse(localStorage.getItem("miLista")) || [];
-      const serie = lista.find(x => x.id === tvId);
-      if (serie && serie.capitulos) {
-        const e = serie.capitulos.find(x => x.season === season && x.number === ep);
-        if (e && e.puntuacion >= i) star.classList.add("active");
+      const star = document.createElement('span');
+      star.classList.add('star');
+      star.innerHTML = '⭐';
+      star.onclick = () => puntuarCapitulo(tvId, season, ep, i);
+      const lista = JSON.parse(localStorage.getItem('miLista') || '[]');
+      const serie = lista.find(x => x.id == tvId);
+      if (serie?.capitulos) {
+        const e = serie.capitulos.find(x => x.season == season && x.number == ep);
+        if (e && e.puntuacion >= i) star.classList.add('active');
       }
       div.appendChild(star);
     }
@@ -215,156 +277,168 @@ function dibujarEstrellasCapitulos() {
 }
 
 function puntuarCapitulo(tvId, seasonNum, episodeNum, puntuacion) {
-  let lista = JSON.parse(localStorage.getItem("miLista")) || [];
-  let serie = lista.find(i => i.id === tvId);
-  if (!serie) { alert("Agrega la serie a tu lista primero"); return; }
+  let lista = JSON.parse(localStorage.getItem('miLista') || '[]');
+  let serie = lista.find(i => i.id == tvId);
+  if (!serie) {
+    alert('Agrega la serie a tu lista primero');
+    return;
+  }
   serie.capitulos = serie.capitulos || [];
-  let ep = serie.capitulos.find(e => e.season === seasonNum && e.number === episodeNum);
-  if (!ep) serie.capitulos.push({ season: seasonNum, number: episodeNum, puntuacion: puntuacion });
-  else ep.puntuacion = puntuacion;
-  localStorage.setItem("miLista", JSON.stringify(lista));
+  let ep = serie.capitulos.find(e => e.season == seasonNum && e.number == episodeNum);
+  if (!ep) {
+    serie.capitulos.push({ season: seasonNum, number: episodeNum, puntuacion });
+  } else {
+    ep.puntuacion = puntuacion;
+  }
+  localStorage.setItem('miLista', JSON.stringify(lista));
 }
 
-// ---------- MI LISTA ----------
-
+// MI LISTA
 function agregarMiLista() {
-  let lista = JSON.parse(localStorage.getItem("miLista")) || [];
+  let lista = JSON.parse(localStorage.getItem('miLista') || '[]');
   itemActual.miPuntuacion = itemActual.miPuntuacion || 0;
   if (!lista.find(i => i.id === itemActual.id)) lista.push(itemActual);
-  localStorage.setItem("miLista", JSON.stringify(lista));
-  alert("Añadido a tu lista ⭐");
+  localStorage.setItem('miLista', JSON.stringify(lista));
+  alert('Añadido a tu lista');
 }
 
 function cargarMiLista() {
-  const lista = JSON.parse(localStorage.getItem("miLista")) || [];
-  mostrarResultados(lista, "miLista");
+  const lista = JSON.parse(localStorage.getItem('miLista') || '[]');
+  mostrarResultados(lista, 'miLista');
 }
 
-// ---------- RECORDATORIOS ----------
-
+// RECORDATORIOS
 function guardarRecordatorio() {
-  let recordatorios = JSON.parse(localStorage.getItem("recordatorios")) || [];
+  let recordatorios = JSON.parse(localStorage.getItem('recordatorios') || '[]');
   recordatorios.push(itemActual);
-  localStorage.setItem("recordatorios", JSON.stringify(recordatorios));
-  alert("Recordatorio guardado 📌");
+  localStorage.setItem('recordatorios', JSON.stringify(recordatorios));
+  alert('Recordatorio guardado');
 }
 
 function comprobarRecordatorios() {
-  let recordatorios = JSON.parse(localStorage.getItem("recordatorios")) || [];
-  const hoy = new Date().toISOString().split("T")[0];
+  let recordatorios = JSON.parse(localStorage.getItem('recordatorios') || '[]');
+  const hoy = new Date().toISOString().split('T')[0];
   recordatorios.forEach(item => {
-    if (item.release_date === hoy || item.first_air_date === hoy) {
-      const aviso = document.createElement("div");
-      aviso.id = "notificaciones";
-      aviso.innerText = "🔥 Hoy se estrena " + (item.title || item.name);
+    const fecha = item.release_date || item.first_air_date;
+    if (fecha === hoy) {
+      const aviso = document.createElement('div');
+      aviso.id = 'notificaciones';
+      aviso.innerText = `¡Hoy se estrena ${item.title || item.name}!`;
+      aviso.style.cssText = 'position:fixed;top:10px;right:10px;background:gold;color:black;padding:1rem;border-radius:5px;z-index:10000;';
       document.body.prepend(aviso);
+      setTimeout(() => aviso.remove(), 10000);
     }
   });
 }
 
-// ---------- TRAILER ----------
-
+// TRAILER
 async function verTrailer() {
-  const tipo = itemActual.media_type || (itemActual.title ? "movie" : "tv");
-  const res = await fetch(`${BASE_URL}/${tipo}/${itemActual.id}/videos?api_key=${API_KEY}&language=es-ES`);
+  const tipo = itemActual.title ? 'movie' : 'tv';
+  const res = await fetch(`${BASEURL}${tipo}/${itemActual.id}/videos?api_key=${APIKEY}&language=es-ES`);
   const data = await res.json();
-  const trailer = data.results.find(v => v.type === "Trailer");
+  const trailer = data.results.find(v => v.type === 'Trailer');
+  const cont = document.getElementById('trailerContainer');
   if (trailer) {
-    document.getElementById("trailerContainer").innerHTML =
-      `<iframe src="https://www.youtube.com/embed/${trailer.key}" allowfullscreen></iframe>`;
+    cont.innerHTML = `<iframe src="https://www.youtube.com/embed/${trailer.key}" allowfullscreen></iframe>`;
+  } else {
+    cont.innerHTML = '<p>No hay trailer disponible</p>';
   }
 }
 
-// ---------- BUSCAR ----------
-
+// BUSCAR
 function buscar(next = false) {
-  const texto = document.getElementById("searchInput").value;
-  const tipo = document.getElementById("tipo").value;
-  if (!next) { busquedaPage = 1; document.getElementById("contenedorBuscar").innerHTML = ""; buscando = true; currentSearch = texto; }
-  fetch(`${BASE_URL}/search/${tipo}?api_key=${API_KEY}&language=es-ES&query=${currentSearch}&page=${busquedaPage}`)
+  if (!next) {
+    busquedaPage = 1;
+    document.getElementById('contenedorBuscar').innerHTML = '';
+  }
+  buscando = true;
+  const texto = document.getElementById('searchInput').value;
+  const tipo = document.getElementById('tipo').value;
+  currentSearch = texto;
+  fetch(`${BASEURL}search/${tipo}?api_key=${APIKEY}&language=es-ES&query=${currentSearch}&page=${busquedaPage}`)
     .then(res => res.json())
     .then(data => {
-      mostrarResultados(data.results, "contenedorBuscar");
+      mostrarResultados(data.results, 'contenedorBuscar');
       busquedaPage++;
     });
+  buscando = false;
 }
 
-// ---------- EXPORT / IMPORT ----------
-
+// EXPORT/IMPORT (igual)
 function exportarLista() {
-  const lista = localStorage.getItem("miLista");
-  const blob = new Blob([lista], { type: "application/json" });
-  const a = document.createElement("a");
+  const lista = localStorage.getItem('miLista');
+  const blob = new Blob([lista], { type: 'application/json' });
+  const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = "mi_lista_seriestopia.json";
+  a.download = 'milista-seriestopia.json';
   a.click();
 }
 
 function importarLista(e) {
   const file = e.target.files[0];
   const reader = new FileReader();
-  reader.onload = function () {
-    localStorage.setItem("miLista", reader.result);
-    alert("Lista importada correctamente");
+  reader.onload = function() {
+    localStorage.setItem('miLista', reader.result);
+    alert('Lista importada correctamente');
   };
   reader.readAsText(file);
 }
 
 function exportarAlertas() {
-  const alertas = localStorage.getItem("recordatorios");
-  const blob = new Blob([alertas], { type: "application/json" });
-  const a = document.createElement("a");
+  const alertas = localStorage.getItem('recordatorios');
+  const blob = new Blob([alertas], { type: 'application/json' });
+  const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = "alertas_seriestopia.json";
+  a.download = 'alertas-seriestopia.json';
   a.click();
 }
 
 function compartirLista() {
-  const lista = localStorage.getItem("miLista");
-  const blob = new Blob([lista], { type: "application/json" });
+  const lista = localStorage.getItem('miLista');
+  const blob = new Blob([lista], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  prompt("Enlace compartible (temporal, abrir en mismo navegador):", url);
+  prompt('Enlace compartible (temporal, abrir en mismo navegador):', url);
 }
 
-// ---------- AGENDA ----------
-
+// AGENDA - CORREGIDA
 async function cargarAgenda() {
-  const container = document.getElementById("agendaContainer");
-  container.innerHTML = "";
-
-  // Traer próximas series y películas usando TMDB "upcoming" y "on_the_air"
-  const [pelisRes, seriesRes] = await Promise.all([
-    fetch(`${BASE_URL}/movie/upcoming?api_key=${API_KEY}&language=es-ES&page=1`),
-    fetch(`${BASE_URL}/tv/on_the_air?api_key=${API_KEY}&language=es-ES&page=1`)
-  ]);
-
-  const pelis = (await pelisRes.json()).results;
-  const series = (await seriesRes.json()).results;
-
-  const items = [...pelis, ...series];
-  items.sort((a,b) => {
-    const dateA = a.release_date || a.first_air_date || "9999-12-31";
-    const dateB = b.release_date || b.first_air_date || "9999-12-31";
-    return new Date(dateA) - new Date(dateB);
-  });
-
-  items.forEach(item => {
-    const tipo = item.media_type || (item.title ? "movie" : "tv");
-    const div = document.createElement("div");
-    div.classList.add("agendaItem");
-    div.dataset.tipo = tipo;
-    div.innerHTML = `
-      <strong>${item.title || item.name}</strong> 📅 ${item.release_date || item.first_air_date || "Desconocida"} <br>
-      Tipo: ${tipo.toUpperCase()}
-      <button onclick='abrirModal(${JSON.stringify(item)})'>🔎 Detalle</button>
-    `;
-    container.appendChild(div);
-  });
+  const container = document.getElementById('agendaContainer');
+  container.innerHTML = '<p>Cargando agenda...</p>'; // Indicador
+  try {
+    const [pelisRes, seriesRes] = await Promise.all([
+      fetch(`${BASEURL}movie/upcoming?api_key=${APIKEY}&language=es-ES&page=1`),
+      fetch(`${BASEURL}tv/on_the_air?api_key=${APIKEY}&language=es-ES&page=1`)
+    ]);
+    const pelis = (await pelisRes.json()).results;
+    const series = (await seriesRes.json()).results;
+    const items = [...pelis, ...series];
+    items.sort((a, b) => {
+      const dateA = a.release_date || a.first_air_date || '9999-12-31';
+      const dateB = b.release_date || b.first_air_date || '9999-12-31';
+      return parseDateStrict(dateA) - parseDateStrict(dateB); // CORREGIDO: Usa parseDateStrict
+    });
+    container.innerHTML = '';
+    items.slice(0, 50).forEach(item => { // Limitar a 50
+      const tipo = item.title ? 'movie' : 'tv';
+      const div = document.createElement('div');
+      div.classList.add('agendaItem');
+      div.dataset.tipo = tipo;
+      div.innerHTML = `
+        <strong>${item.title || item.name}</strong><br>
+        Fecha: ${formatDate(item.release_date || item.first_air_date)}<br>  <!-- CORREGIDO -->
+        Tipo: ${tipo.toUpperCase()}<br>
+        <button onclick="abrirModal(${JSON.stringify(item)})">Detalle</button>
+      `;
+      container.appendChild(div);
+    });
+  } catch (e) {
+    container.innerHTML = '<p>Error al cargar agenda.</p>';
+  }
 }
 
 function filtrarAgenda(tipo) {
-  const container = document.getElementById("agendaContainer");
-  container.querySelectorAll(".agendaItem").forEach(item => {
-    item.style.display = (item.dataset.tipo === tipo) ? "block" : "none";
+  const container = document.getElementById('agendaContainer');
+  container.querySelectorAll('.agendaItem').forEach(item => {
+    item.style.display = item.dataset.tipo === tipo ? 'block' : 'none';
   });
 }
