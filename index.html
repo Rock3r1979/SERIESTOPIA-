@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SERIESTOPIA</title>
-<link rel="stylesheet" href="./style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SERIESTOPIA</title>
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 
@@ -19,6 +19,7 @@
   </nav>
 </header>
 
+<!-- BUSCADOR -->
 <section id="buscar" class="seccion">
   <input type="text" id="searchInput" placeholder="Buscar película o serie...">
   <select id="tipo">
@@ -30,24 +31,26 @@
   <div id="contenedorBuscar" class="grid"></div>
 </section>
 
+<!-- SECCIONES -->
 <section id="tendencias" class="seccion grid"></section>
 <section id="estrenos"  class="seccion grid"></section>
-<section id="agenda"    class="seccion">
-  <div id="agendaFiltros">
-    <button onclick="filtrarAgenda('tv')">Series</button>
+<section id="agenda"    class="seccion grid">
+  <div id="filtrosAgenda">
     <button onclick="filtrarAgenda('movie')">Películas</button>
+    <button onclick="filtrarAgenda('tv')">Series</button>
   </div>
   <div id="agendaContainer"></div>
 </section>
 <section id="miLista"  class="seccion grid"></section>
 
-<!-- Modal de detalle -->
+<!-- MODAL DETALLE -->
 <div id="modal" class="modal">
   <div class="modal-content">
     <span id="cerrar" class="close">&times;</span>
     <div id="detalle"></div>
-    <div id="plataformasContainer"></div>
+
     <div id="temporadasContainer"></div>
+
     <div id="acciones">
       <button id="agregarLista">Agregar a Mi Lista</button>
       <label>Puntuación:
@@ -63,15 +66,20 @@
       <button id="recordar">📌 Recordarme</button>
       <button id="verTrailer">🎥 Ver Trailer</button>
     </div>
+
     <div id="trailerContainer"></div>
+    <div id="plataformasContainer"></div>
+    <div id="estrellasSerie"></div>
   </div>
 </div>
 
+<!-- EXPORT / IMPORT -->
 <div id="exportImport">
   <button onclick="exportarLista()">💾 Exportar Mi Lista</button>
-  <label for="importFile">Importar Mi Lista</label>
+  <label for="importFile" style="margin-left: 0.5rem;">Importar Mi Lista</label>
   <input type="file" id="importFile" accept=".json" onchange="importarLista(event)">
   <button onclick="exportarAlertas()">💌 Exportar Alertas</button>
+  <button onclick="compartirLista()">🔗 Compartir Mi Lista</button>
 </div>
 
 <script src="./script.js"></script>
