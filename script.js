@@ -2,9 +2,8 @@ const API_KEY = "bc2f8428b1238d724f9003cbf430ccee";
 const BASE_URL = "https://api.themoviedb.org/3";
 
 let itemActual = null;
-let peliculasPage = 1, seriesPage = 1;
-let buscando = false, busquedaPage = 1;
-let currentSearch = "";
+let peliculasPage = 1, seriesPage = 1, busquedaPage = 1;
+let buscando = false, currentSearch = "";
 let filtroSeries = "latest"; // latest, popular, top, lista
 let filtroPeliculas = "latest";
 let temporadaAbierta = null;
@@ -12,7 +11,8 @@ let temporadaAbierta = null;
 document.addEventListener("DOMContentLoaded", () => {
   cargarPeliculas();
   cargarSeries();
-  mostrarSeccion("series"); // por defecto mostrar series
+  cargarAgendaEPG();
+  mostrarSeccion("tendencias");
   comprobarRecordatorios();
 
   document.getElementById("cerrar").onclick = cerrarModal;
@@ -22,59 +22,60 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.addEventListener("scroll", () => {
     if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 10) {
-      if (document.getElementById("peliculas").style.display === "grid") cargarPeliculas();
-      if (document.getElementById("series").style.display === "grid") cargarSeries();
+      if (document.getElementById("tendencias").style.display === "grid") cargarPeliculas();
+      if (document.getElementById("estrenos").style.display === "grid") cargarSeries();
       if (buscando) buscar(true);
     }
   });
 });
 
-// ---------- MOSTRAR SECCIONES ----------
+// -------- Mostrar sección --------
 function mostrarSeccion(id) {
   document.querySelectorAll(".seccion").forEach(s => s.style.display = "none");
-  document.getElementById(id).style.display = "grid";
+  document.getElementById(id).style.display = id === "agenda" ? "block" : "grid";
   if (id === "miLista") cargarMiLista();
   if (id === "agenda") cargarAgendaEPG();
   if (id === "buscar") document.getElementById("contenedorBuscar").innerHTML = "";
 }
 
-// ---------- SERIES Y PELÍCULAS ----------
+// -------- Series y Películas --------
 async function cargarPeliculas() {
   let url;
   if (filtroPeliculas === "lista") {
     const lista = JSON.parse(localStorage.getItem("miLista")) || [];
-    mostrarResultados(lista.filter(i => i.title), "peliculas");
+    mostrarResultados(lista.filter(i => i.title), "tendencias");
     return;
   }
   if (filtroPeliculas === "latest") url = `${BASE_URL}/movie/now_playing?api_key=${API_KEY}&language=es-ES&page=${peliculasPage}`;
   if (filtroPeliculas === "popular") url = `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=es-ES&page=${peliculasPage}`;
   if (filtroPeliculas === "top") url = `${BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=es-ES&page=${peliculasPage}`;
-  
+
   const res = await fetch(url);
   const data = await res.json();
   peliculasPage++;
-  mostrarResultados(data.results, "peliculas");
+  mostrarResultados(data.results, "tendencias");
 }
 
 async function cargarSeries() {
   let url;
   if (filtroSeries === "lista") {
     const lista = JSON.parse(localStorage.getItem("miLista")) || [];
-    mostrarResultados(lista.filter(i => i.name), "series");
+    mostrarResultados(lista.filter(i => i.name), "estrenos");
     return;
   }
   if (filtroSeries === "latest") url = `${BASE_URL}/tv/on_the_air?api_key=${API_KEY}&language=es-ES&page=${seriesPage}`;
   if (filtroSeries === "popular") url = `${BASE_URL}/tv/popular?api_key=${API_KEY}&language=es-ES&page=${seriesPage}`;
   if (filtroSeries === "top") url = `${BASE_URL}/tv/top_rated?api_key=${API_KEY}&language=es-ES&page=${seriesPage}`;
-  
+
   const res = await fetch(url);
   const data = await res.json();
   seriesPage++;
-  mostrarResultados(data.results, "series");
+  mostrarResultados(data.results, "estrenos");
 }
 
 function mostrarResultados(items, contenedorId) {
   const cont = document.getElementById(contenedorId);
+  cont.classList.add("grid");
   items.forEach(item => {
     if (!item.poster_path) return;
     const div = document.createElement("div");
@@ -84,12 +85,20 @@ function mostrarResultados(items, contenedorId) {
       <h4>${item.title || item.name}</h4>
       <p>⭐ ${item.vote_average}</p>
     `;
-    div.onclick = () => abrirModal(item);
+    div.onclick = () => abrirModalPorID(item.id, item.media_type || (item.title ? "movie" : "tv"));
     cont.appendChild(div);
   });
 }
 
-// ---------- MODAL DETALLE ----------
+// -------- Modal Detalle --------
+async function abrirModalPorID(id, tipo) {
+  let item;
+  const res = await fetch(`${BASE_URL}/${tipo}/${id}?api_key=${API_KEY}&language=es-ES`);
+  item = await res.json();
+  item.media_type = tipo;
+  abrirModal(item);
+}
+
 function abrirModal(item) {
   itemActual = item;
   document.getElementById("detalle").innerHTML = `
@@ -98,9 +107,8 @@ function abrirModal(item) {
     <p>📅 ${item.release_date || item.first_air_date || ""}</p>
   `;
   document.getElementById("temporadasContainer").innerHTML = "";
-  dibujarEstrellas(item);
-  cargarPlataformas(item.id, item.media_type || (item.title ? "movie" : "tv"));
-  if (item.first_air_date) cargarTemporadas(item);
+  cargarPlataformas(item.id, item.media_type);
+  if (item.media_type === "tv") cargarTemporadas(item);
   document.getElementById("modal").style.display = "block";
 }
 
@@ -110,7 +118,7 @@ function cerrarModal() {
   document.getElementById("temporadasContainer").innerHTML = "";
 }
 
-// ---------- PLATAFORMAS ----------
+// -------- Plataformas --------
 async function cargarPlataformas(id, tipo) {
   const res = await fetch(`${BASE_URL}/${tipo}/${id}/watch/providers?api_key=${API_KEY}`);
   const data = await res.json();
@@ -126,7 +134,7 @@ async function cargarPlataformas(id, tipo) {
   } else cont.innerHTML = "<p>No disponible en España</p>";
 }
 
-// ---------- TEMPORADAS Y CAPÍTULOS ----------
+// -------- Temporadas y capítulos --------
 async function cargarTemporadas(item) {
   const res = await fetch(`${BASE_URL}/tv/${item.id}?api_key=${API_KEY}&language=es-ES`);
   const data = await res.json();
@@ -142,8 +150,9 @@ async function cargarTemporadas(item) {
       }
       temporadaAbierta = div;
       const ulExistente = div.querySelector("ul");
-      if (ulExistente) ulExistente.remove();
-      else {
+      if (ulExistente) {
+        ulExistente.remove();
+      } else {
         const resEp = await fetch(`${BASE_URL}/tv/${item.id}/season/${season.season_number}?api_key=${API_KEY}&language=es-ES`);
         const dataEp = await resEp.json();
         const ul = document.createElement("ul");
@@ -162,20 +171,12 @@ async function cargarTemporadas(item) {
   });
 }
 
-// ---------- ESTRELLAS Y PUNTUACIONES ----------
+// -------- Estrellas y puntuaciones --------
 function dibujarEstrellas(item) {
-  const container = document.getElementById("estrellasSerie");
-  container.innerHTML = "";
-  for (let i = 1; i <= 5; i++) {
-    const star = document.createElement("span");
-    star.classList.add("star");
-    star.innerHTML = "★";
-    star.onclick = () => { puntuarSerie(item, i); dibujarEstrellas(item); };
-    const lista = JSON.parse(localStorage.getItem("miLista")) || [];
-    const s = lista.find(x => x.id === item.id);
-    if (s && s.miPuntuacion >= i) star.classList.add("active");
-    container.appendChild(star);
-  }
+  const container = document.getElementById("puntuacion");
+  const lista = JSON.parse(localStorage.getItem("miLista")) || [];
+  const s = lista.find(x => x.id === item.id);
+  container.value = s ? s.miPuntuacion : 0;
 }
 
 function puntuarSerie(item, p) {
@@ -218,7 +219,7 @@ function puntuarCapitulo(tvId, seasonNum, episodeNum, puntuacion) {
   localStorage.setItem("miLista", JSON.stringify(lista));
 }
 
-// ---------- MI LISTA ----------
+// -------- Mi Lista --------
 function agregarMiLista() {
   let lista = JSON.parse(localStorage.getItem("miLista")) || [];
   itemActual.miPuntuacion = itemActual.miPuntuacion || 0;
@@ -232,7 +233,7 @@ function cargarMiLista() {
   mostrarResultados(lista, "miLista");
 }
 
-// ---------- RECORDATORIOS ----------
+// -------- Recordatorios --------
 function guardarRecordatorio() {
   let recordatorios = JSON.parse(localStorage.getItem("recordatorios")) || [];
   recordatorios.push(itemActual);
@@ -253,7 +254,7 @@ function comprobarRecordatorios() {
   });
 }
 
-// ---------- TRAILER ----------
+// -------- Trailer --------
 async function verTrailer() {
   const tipo = itemActual.media_type || (itemActual.title ? "movie" : "tv");
   const res = await fetch(`${BASE_URL}/${tipo}/${itemActual.id}/videos?api_key=${API_KEY}&language=es-ES`);
@@ -265,7 +266,7 @@ async function verTrailer() {
   }
 }
 
-// ---------- BUSCAR ----------
+// -------- Buscar --------
 function buscar(next = false) {
   const texto = document.getElementById("searchInput").value;
   const tipo = document.getElementById("tipo").value;
@@ -278,7 +279,7 @@ function buscar(next = false) {
     });
 }
 
-// ---------- EXPORT / IMPORT ----------
+// -------- Export / Import --------
 function exportarLista() {
   const lista = localStorage.getItem("miLista");
   const blob = new Blob([lista], { type: "application/json" });
@@ -307,64 +308,41 @@ function exportarAlertas() {
   a.click();
 }
 
-function compartirLista() {
-  const lista = localStorage.getItem("miLista");
-  const blob = new Blob([lista], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  prompt("Enlace compartible (temporal, abrir en mismo navegador):", url);
-}
-
-// ---------- AGENDA EPG DE ESTRENOS ----------
+// -------- Agenda EPG (estrenos) --------
 async function cargarAgendaEPG() {
   const container = document.getElementById("agendaContainer");
   container.innerHTML = "";
 
-  // Traer películas próximas
-  const resPelis = await fetch(`${BASE_URL}/movie/upcoming?api_key=${API_KEY}&language=es-ES&page=1`);
-  const pelis = (await resPelis.json()).results;
-
-  // Traer series próximas
-  const resSeries = await fetch(`${BASE_URL}/tv/on_the_air?api_key=${API_KEY}&language=es-ES&page=1`);
-  const series = (await resSeries.json()).results;
-
-  const todos = [...pelis.map(p => ({...p, tipo:"movie"})), ...series.map(s => ({...s, tipo:"tv"}))];
-
-  // Ordenar por fecha de estreno
-  todos.sort((a,b) => new Date(a.release_date || a.first_air_date) - new Date(b.release_date || b.first_air_date));
-
-  // Crear mini EPG por día (7 días)
-  const hoy = new Date();
-  const dias = [];
-  for (let i=0;i<7;i++){
-    const d = new Date();
-    d.setDate(hoy.getDate()+i);
-    dias.push(d);
-  }
-
-  const calendario = document.createElement("div");
-  calendario.classList.add("calendario");
-  dias.forEach(d => {
-    const diaDiv = document.createElement("div");
-    diaDiv.classList.add("diaCalendario");
-    diaDiv.innerHTML = `<h4>${d.toLocaleDateString("es-ES",{weekday:"short",day:"numeric",month:"short"})}</h4>`;
-    todos.forEach(item=>{
-      const fechaItem = new Date(item.release_date || item.first_air_date);
-      if(fechaItem.toDateString() === d.toDateString()){
-        const itemDiv = document.createElement("div");
-        itemDiv.classList.add("agendaItem");
-        itemDiv.innerHTML = `
-          <strong>${item.title || item.name}</strong> <br>
-          Tipo: ${item.tipo.toUpperCase()} <br>
-          📅 ${item.release_date || item.first_air_date || ""} <br>
-          <button onclick='abrirModal(${JSON.stringify(item)})'>🔎 Detalle</button>
-          <div id="plataformas_${item.id}"></div>
-        `;
-        diaDiv.appendChild(itemDiv);
-        cargarPlataformas(item.id, item.tipo).then(p => {}); // se carga en el modal al abrir
-      }
-    });
-    calendario.appendChild(diaDiv);
+  // Próximos estrenos películas
+  const resPel = await fetch(`${BASE_URL}/movie/upcoming?api_key=${API_KEY}&language=es-ES&page=1`);
+  const dataPel = await resPel.json();
+  dataPel.results.forEach(pel => {
+    const div = document.createElement("div");
+    div.classList.add("agendaItem");
+    div.dataset.tipo = "movie";
+    div.innerHTML = `<strong>${pel.title}</strong> 📅 ${pel.release_date || "Desconocida"}
+      <button onclick='abrirModalPorID("${pel.id}","movie")'>🔎 Detalle</button>
+    `;
+    container.appendChild(div);
   });
 
-  container.appendChild(calendario);
+  // Próximos estrenos series
+  const resTV = await fetch(`${BASE_URL}/tv/on_the_air?api_key=${API_KEY}&language=es-ES&page=1`);
+  const dataTV = await resTV.json();
+  dataTV.results.forEach(tv => {
+    const div = document.createElement("div");
+    div.classList.add("agendaItem");
+    div.dataset.tipo = "tv";
+    div.innerHTML = `<strong>${tv.name}</strong> 📅 ${tv.first_air_date || "Desconocida"}
+      <button onclick='abrirModalPorID("${tv.id}","tv")'>🔎 Detalle</button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function filtrarAgenda(tipo) {
+  const container = document.getElementById("agendaContainer");
+  container.querySelectorAll(".agendaItem").forEach(item => {
+    item.style.display = (item.dataset.tipo === tipo) ? "block" : "none";
+  });
 }
