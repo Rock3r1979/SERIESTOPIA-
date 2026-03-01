@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SERIESTOPIA PRO+</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="./style.css">
 </head>
 <body>
 
@@ -52,6 +52,7 @@
           <option value="5">5⭐</option>
         </select>
       </label>
+      <button id="recordar">📌 Recordarme</button>
       <button id="verTrailer">🎥 Ver Trailer</button>
     </div>
     <div id="trailerContainer"></div>
@@ -62,8 +63,9 @@
 <div id="exportImport">
   <button onclick="exportarLista()">💾 Exportar Mi Lista</button>
   <input type="file" id="importFile" onchange="importarLista(event)">
+  <button onclick="exportarAlertas()">💌 Exportar Alertas</button>
 </div>
 
-<script src="script.js"></script>
+<script src="./script.js"></script>
 </body>
 </html>
