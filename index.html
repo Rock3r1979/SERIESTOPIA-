@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SERIESTOPIA PRO+</title>
-<link rel="stylesheet" href="./style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SERIESTOPIA PRO+</title>
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 
@@ -31,9 +31,9 @@
 </section>
 
 <section id="tendencias" class="seccion grid"></section>
-<section id="estrenos" class="seccion grid"></section>
-<section id="agenda" class="seccion grid"></section>
-<section id="miLista" class="seccion grid"></section>
+<section id="estrenos"  class="seccion grid"></section>
+<section id="agenda"    class="seccion grid"></section>
+<section id="miLista"  class="seccion grid"></section>
 
 <!-- Modal de detalle -->
 <div id="modal" class="modal">
@@ -62,10 +62,12 @@
 
 <div id="exportImport">
   <button onclick="exportarLista()">💾 Exportar Mi Lista</button>
-  <input type="file" id="importFile" onchange="importarLista(event)">
+  <label for="importFile" style="margin-left: 0.5rem;">Importar Mi Lista</label>
+  <input type="file" id="importFile" accept=".json" onchange="importarLista(event)">
   <button onclick="exportarAlertas()">💌 Exportar Alertas</button>
 </div>
 
 <script src="./script.js"></script>
+
 </body>
 </html>
