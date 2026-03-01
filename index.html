@@ -13,6 +13,8 @@
   <nav>
     <button onclick="mostrarSeccion('tendencias')">🔥 Tendencias</button>
     <button onclick="mostrarSeccion('estrenos')">📅 Próximos Estrenos</button>
+    <button onclick="mostrarSeccion('peliculas')">🎞 Películas</button>
+    <button onclick="mostrarSeccion('series')">📺 Series</button>
     <button onclick="mostrarSeccion('agenda')">🗓 Agenda</button>
     <button onclick="mostrarSeccion('miLista')">📌 Mi Lista</button>
     <button onclick="mostrarSeccion('buscar')">🔍 Buscar</button>
@@ -31,10 +33,12 @@
   <div id="contenedorBuscar" class="grid"></div>
 </section>
 
-<!-- SECCIONES -->
+<!-- SECCIONES PRINCIPALES -->
 <section id="tendencias" class="seccion grid"></section>
 <section id="estrenos"  class="seccion grid"></section>
-<section id="agenda"    class="seccion grid">
+<section id="peliculas" class="seccion grid"></section>
+<section id="series" class="seccion grid"></section>
+<section id="agenda" class="seccion">
   <div id="filtrosAgenda">
     <button onclick="filtrarAgenda('movie')">Películas</button>
     <button onclick="filtrarAgenda('tv')">Series</button>
