@@ -9,24 +9,24 @@
 <body>
 
 <header>
-    <h1>🎬 SERIESTOPIA PRO</h1>
-    <nav>
-        <button onclick="mostrarSeccion('tendencias')">🔥 Tendencias</button>
-        <button onclick="mostrarSeccion('estrenos')">📅 Próximos Estrenos</button>
-        <button onclick="mostrarSeccion('miLista')">📌 Mi Lista</button>
-        <button onclick="mostrarSeccion('buscar')">🔍 Buscar</button>
-    </nav>
+  <h1>🎬 SERIESTOPIA PRO</h1>
+  <nav>
+    <button onclick="mostrarSeccion('tendencias')">🔥 Tendencias</button>
+    <button onclick="mostrarSeccion('estrenos')">📅 Próximos Estrenos</button>
+    <button onclick="mostrarSeccion('miLista')">📌 Mi Lista</button>
+    <button onclick="mostrarSeccion('buscar')">🔍 Buscar</button>
+  </nav>
 </header>
 
 <section id="buscar" class="seccion">
-    <input type="text" id="searchInput" placeholder="Buscar película o serie...">
-    <select id="tipo">
-        <option value="multi">Todo</option>
-        <option value="movie">Película</option>
-        <option value="tv">Serie</option>
-    </select>
-    <button onclick="buscar()">Buscar</button>
-    <div id="contenedorBuscar" class="grid"></div>
+  <input type="text" id="searchInput" placeholder="Buscar película o serie...">
+  <select id="tipo">
+    <option value="multi">Todo</option>
+    <option value="movie">Película</option>
+    <option value="tv">Serie</option>
+  </select>
+  <button onclick="buscar()">Buscar</button>
+  <div id="contenedorBuscar" class="grid"></div>
 </section>
 
 <section id="tendencias" class="seccion grid"></section>
@@ -50,7 +50,9 @@
           <option value="5">5⭐</option>
         </select>
       </label>
+      <button id="verTrailer">🎥 Ver Trailer</button>
     </div>
+    <div id="trailerContainer"></div>
   </div>
 </div>
 
