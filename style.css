@@ -1,87 +1,245 @@
-body {
-  background:#0f0f0f;
-  color:white;
-  font-family:Arial,sans-serif;
-  margin:0;
+/* --------------------------- RESET --------------------------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
 }
 
+body {
+  background-color: #121212;
+  color: #fff;
+  min-height: 100vh;
+}
+
+/* --------------------------- HEADER --------------------------- */
 header {
-  background:#1a1a1a;
-  padding:12px;
-  text-align:center;
-  position:sticky;
-  top:0;
-  z-index:100;
+  background-color: #1f1f1f;
+  padding: 1rem;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+header h1 {
+  margin-bottom: 0.5rem;
+  font-size: 1.8rem;
 }
 
 nav button {
-  margin:4px;
-  padding:6px 10px;
-  border:none;
-  background:#e50914;
-  color:white;
-  border-radius:6px;
-  cursor:pointer;
-  font-size:0.8rem;
+  margin: 0.2rem;
+  padding: 0.4rem 0.8rem;
+  background-color: #282828;
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  cursor: pointer;
+  transition: 0.2s;
 }
 
-.seccion { display:none; padding:15px; }
-.grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+nav button:hover {
+  background-color: #3f3f3f;
+}
+
+/* --------------------------- SECCIONES --------------------------- */
+.seccion {
+  display: none;
+  padding: 1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+/* --------------------------- CARDS --------------------------- */
 .card {
-  background:#181818;
-  border-radius:10px;
-  overflow:hidden;
-  cursor:pointer;
-  transition:0.3s;
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: 0.3s;
 }
-.card:hover { transform:scale(1.05); }
-.card img { width:100%; height:170px; object-fit:cover; }
-.card h4 { font-size:0.8rem; text-align:center; margin:6px; }
-.card p { text-align:center; font-size:0.75rem; color:#bbb; }
 
+.card:hover {
+  transform: scale(1.03);
+}
+
+.card img {
+  width: 100%;
+  display: block;
+  border-bottom: 1px solid #333;
+}
+
+.card h4 {
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+.card p {
+  padding: 0 0.5rem 0.5rem;
+  font-size: 0.9rem;
+}
+
+/* --------------------------- MODAL --------------------------- */
 .modal {
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.9);
-  z-index:200;
+  display: none;
+  position: fixed;
+  z-index: 200;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  background-color: rgba(0,0,0,0.9);
+  padding: 2rem 1rem;
 }
+
 .modal-content {
-  background:#222;
-  margin:5% auto;
-  padding:20px;
-  border-radius:12px;
-  width:90%;
-  max-width:700px;
-}
-.close { float:right; font-size:24px; cursor:pointer; }
-
-#plataformasContainer img { width:35px; margin:5px; }
-#trailerContainer iframe { width:100%; height:250px; margin-top:10px; border-radius:8px; }
-#temporadasContainer { margin-top:12px; }
-#estrellasSerie { margin-top:8px; display:flex; }
-.star { font-size:20px; cursor:pointer; color:#444; margin-right:4px; }
-.star.active { color:#ffd700; }
-
-#notificaciones {
-  text-align:center;
-  background:#e50914;
-  padding:6px;
-  font-size:0.8rem;
+  max-width: 900px;
+  margin: auto;
+  background-color: #1e1e1e;
+  border-radius: 10px;
+  padding: 1rem 2rem;
+  position: relative;
 }
 
-#exportImport { text-align:center; padding:15px; }
+.close {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #fff;
+}
 
+#detalle h2 {
+  margin-bottom: 0.5rem;
+}
+
+#acciones {
+  margin: 1rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+#acciones button, #acciones select {
+  padding: 0.4rem 0.8rem;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  background-color: #282828;
+  color: #fff;
+}
+
+#acciones button:hover {
+  background-color: #3f3f3f;
+}
+
+/* --------------------------- TEMPORADAS --------------------------- */
+.temporada {
+  background-color: #2a2a2a;
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  border-radius: 5px;
+}
+
+.temporada h4 {
+  cursor: pointer;
+}
+
+.temporada ul {
+  margin-top: 0.5rem;
+  padding-left: 1rem;
+  list-style: none;
+}
+
+.temporada li {
+  margin-bottom: 0.3rem;
+  font-size: 0.9rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* --------------------------- ESTRELLAS --------------------------- */
+.star {
+  color: #555;
+  cursor: pointer;
+  font-size: 1.2rem;
+  margin-right: 0.2rem;
+}
+
+.star.active {
+  color: gold;
+}
+
+/* --------------------------- TRAILER --------------------------- */
+#trailerContainer iframe {
+  width: 100%;
+  height: 400px;
+  margin-top: 1rem;
+  border-radius: 8px;
+}
+
+/* --------------------------- PLATAFORMAS --------------------------- */
+#plataformasContainer img {
+  width: 40px;
+  margin-right: 0.3rem;
+  margin-top: 0.5rem;
+}
+
+/* --------------------------- AGENDA --------------------------- */
 #agendaContainer {
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-  gap:10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
 }
 
 .agendaItem {
-  background:#181818;
-  padding:8px;
-  border-radius:8px;
+  background-color: #2a2a2a;
+  padding: 0.5rem;
+  border-radius: 5px;
 }
 
-@media (max-width:600px){ .grid{grid-template-columns:repeat(2,1fr);} }
+.agendaItem button {
+  margin-left: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+/* --------------------------- EXPORT / IMPORT --------------------------- */
+#exportImport {
+  margin: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+#exportImport input[type="file"] {
+  color: #fff;
+}
+
+/* --------------------------- NOTIFICACIONES --------------------------- */
+#notificaciones {
+  background-color: #ff4d4d;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+/* --------------------------- RESPONSIVE --------------------------- */
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+
+  #trailerContainer iframe {
+    height: 200px;
+  }
+}
