@@ -3,16 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SERIESTOPIA PRO</title>
+<title>SERIESTOPIA PRO+</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header>
-  <h1>🎬 SERIESTOPIA PRO</h1>
+  <h1>🎬 SERIESTOPIA PRO+</h1>
   <nav>
     <button onclick="mostrarSeccion('tendencias')">🔥 Tendencias</button>
     <button onclick="mostrarSeccion('estrenos')">📅 Próximos Estrenos</button>
+    <button onclick="mostrarSeccion('agenda')">🗓 Agenda</button>
     <button onclick="mostrarSeccion('miLista')">📌 Mi Lista</button>
     <button onclick="mostrarSeccion('buscar')">🔍 Buscar</button>
   </nav>
@@ -31,6 +32,7 @@
 
 <section id="tendencias" class="seccion grid"></section>
 <section id="estrenos" class="seccion grid"></section>
+<section id="agenda" class="seccion grid"></section>
 <section id="miLista" class="seccion grid"></section>
 
 <!-- Modal de detalle -->
@@ -53,7 +55,13 @@
       <button id="verTrailer">🎥 Ver Trailer</button>
     </div>
     <div id="trailerContainer"></div>
+    <div id="plataformasContainer"></div>
   </div>
+</div>
+
+<div id="exportImport">
+  <button onclick="exportarLista()">💾 Exportar Mi Lista</button>
+  <input type="file" id="importFile" onchange="importarLista(event)">
 </div>
 
 <script src="script.js"></script>
