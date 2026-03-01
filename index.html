@@ -32,7 +32,15 @@
 
 <section id="peliculas" class="seccion grid"></section>
 <section id="series" class="seccion grid"></section>
-<section id="agenda" class="seccion grid"></section>
+
+<section id="agenda" class="seccion">
+  <div style="text-align:center; margin-bottom:10px;">
+    <button onclick="filtrarAgenda('tv')">📺 Series</button>
+    <button onclick="filtrarAgenda('movie')">🎥 Películas</button>
+  </div>
+  <div id="agendaContainer"></div>
+</section>
+
 <section id="miLista" class="seccion grid"></section>
 
 <!-- Modal detalle -->
@@ -59,8 +67,6 @@
   <button onclick="exportarAlertas()">💌 Exportar Alertas</button>
   <button onclick="compartirLista()">🔗 Compartir Mi Lista</button>
 </div>
-
-<div id="calendarioContainer"></div>
 
 <script src="./script.js"></script>
 </body>
