@@ -1,31 +1,20 @@
 body {
-  background-color: #0f0f0f;
+  background: #0f0f0f;
   color: white;
-  font-family: 'Segoe UI', sans-serif;
+  font-family: Arial, sans-serif;
   margin: 0;
-  padding: 0;
 }
 
-/* HEADER */
 header {
-  text-align: center;
-  padding: 15px;
   background: #1a1a1a;
+  padding: 12px;
+  text-align: center;
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 100;
 }
 
-header h1 {
-  margin: 0;
-  font-size: 1.4rem;
-}
-
-header nav {
-  margin-top: 10px;
-}
-
-header nav button {
+nav button {
   margin: 4px;
   padding: 6px 10px;
   border: none;
@@ -36,26 +25,23 @@ header nav button {
   font-size: 0.8rem;
 }
 
-/* SECCIONES */
 .seccion {
   display: none;
   padding: 15px;
 }
 
-/* GRID 3 POR FILA */
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 
-/* TARJETAS */
 .card {
   background: #181818;
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.25s ease;
+  transition: 0.3s;
 }
 
 .card:hover {
@@ -64,42 +50,37 @@ header nav button {
 
 .card img {
   width: 100%;
-  height: 200px;
+  height: 170px;
   object-fit: cover;
 }
 
 .card h4 {
   font-size: 0.8rem;
-  margin: 6px;
   text-align: center;
+  margin: 6px;
 }
 
 .card p {
-  font-size: 0.75rem;
   text-align: center;
-  margin: 4px;
+  font-size: 0.75rem;
   color: #bbb;
 }
 
-/* MODAL */
 .modal {
   display: none;
   position: fixed;
-  z-index: 100;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0,0,0,0.9);
+  inset: 0;
+  background: rgba(0,0,0,0.9);
+  z-index: 200;
 }
 
 .modal-content {
-  background-color: #222;
+  background: #222;
   margin: 5% auto;
-  padding: 15px;
+  padding: 20px;
   border-radius: 12px;
   width: 90%;
-  max-width: 600px;
+  max-width: 650px;
 }
 
 .close {
@@ -108,16 +89,32 @@ header nav button {
   cursor: pointer;
 }
 
-/* LOGOS DENTRO DEL MODAL */
 #plataformasContainer img {
   width: 35px;
-  margin-right: 6px;
-  margin-top: 10px;
+  margin: 5px;
 }
 
-/* RESPONSIVE */
+#trailerContainer iframe {
+  width: 100%;
+  height: 250px;
+  margin-top: 10px;
+  border-radius: 8px;
+}
+
+#notificaciones {
+  text-align: center;
+  background: #e50914;
+  padding: 6px;
+  font-size: 0.8rem;
+}
+
+#exportImport {
+  text-align: center;
+  padding: 15px;
+}
+
 @media (max-width: 600px) {
-  .card img {
-    height: 150px;
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
