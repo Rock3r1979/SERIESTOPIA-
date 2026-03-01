@@ -444,7 +444,7 @@ async function cargarAgenda() {
           ${plataformasHtml || '<span style="color:#888;">Plataformas TBA</span>'}
         </div>
         <small>Tipo: ${tipo.toUpperCase()}</small><br>
-        <button onclick="abrirModal(${JSON.stringify(item)})" style="margin-top:5px;">Detalle</button>
+        <button onclick="abrirModal(${JSON.stringify(item).replace(/"/g, '&quot;')})" style="margin-top:5px;">Detalle</button>
       `;
       container.appendChild(div);
     }
