@@ -1,26 +1,24 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SERIESTOPIA</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
+<!-- Modal para ficha detallada -->
+<div id="modal" class="modal">
+  <div class="modal-content">
+    <span id="cerrar" class="close">&times;</span>
+    <div id="detalle"></div>
+    <div id="acciones">
+      <button id="agregarLista">Agregar a Mi Lista</button>
+      <label>Puntuación:
+        <select id="puntuacion">
+          <option value="0">0</option>
+          <option value="1">1⭐</option>
+          <option value="2">2⭐</option>
+          <option value="3">3⭐</option>
+          <option value="4">4⭐</option>
+          <option value="5">5⭐</option>
+        </select>
+      </label>
+    </div>
+  </div>
+</div>
 
-<header>
-    <h1>🎬 SERIESTOPIA</h1>
-    <p>La biblioteca del grupo ❤️</p>
-</header>
-
-<section class="buscador">
-    <input type="text" id="searchInput" placeholder="Buscar película o serie...">
-    <button onclick="buscar()">Buscar</button>
-</section>
-
-<h2>🔥 Tendencias</h2>
-<div id="contenedor" class="grid"></div>
-
-<script src="script.js"></script>
-</body>
-</html>
+<!-- Sección Mi Lista -->
+<h2>📌 Mi Lista</h2>
+<div id="miLista" class="grid"></div>
