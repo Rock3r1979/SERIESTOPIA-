@@ -1,6 +1,53 @@
+const apiKey = "bc2f8428b1238d724f9003cbf430ccee"; // tu API Key TMDB
+
+const contenedorTendencias = document.getElementById("tendencias");
+const contenedorEstrenos = document.getElementById("estrenos");
+const contenedorMiLista = document.getElementById("miLista");
+const contenedorBuscar = document.getElementById("contenedorBuscar");
+
 let miLista = JSON.parse(localStorage.getItem("miLista")) || [];
 
-function mostrarResultados(items) {
+// Mostrar sección
+function mostrarSeccion(id) {
+  document.querySelectorAll('.seccion').forEach(s => s.style.display='none');
+  document.getElementById(id).style.display='block';
+}
+
+// Cargar Tendencias
+function cargarTendencias() {
+  fetch(`https://api.themoviedb.org/3/trending/all/day?api_key=${apiKey}&language=es-ES`)
+    .then(res => res.json())
+    .then(data => mostrarResultados(data.results, contenedorTendencias))
+    .catch(err => console.error(err));
+}
+
+// Cargar Próximos Estrenos
+function cargarEstrenos() {
+  // Películas próximas
+  fetch(`https://api.themoviedb.org/3/movie/upcoming?api_key=${apiKey}&language=es-ES`)
+    .then(res => res.json())
+    .then(data => mostrarResultados(data.results, contenedorEstrenos))
+    .catch(err => console.error(err));
+  // Series en emisión
+  fetch(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${apiKey}&language=es-ES`)
+    .then(res => res.json())
+    .then(data => mostrarResultados(data.results, contenedorEstrenos))
+    .catch(err => console.error(err));
+}
+
+// Buscar
+function buscar() {
+  const query = document.getElementById("searchInput").value;
+  const tipo = document.getElementById("tipo").value;
+  if (!query) return;
+  fetch(`https://api.themoviedb.org/3/search/${tipo}?api_key=${apiKey}&language=es-ES&query=${query}`)
+    .then(res => res.json())
+    .then(data => mostrarResultados(data.results, contenedorBuscar))
+    .catch(err => console.error(err));
+}
+
+// Mostrar resultados en cualquier contenedor
+function mostrarResultados(items, contenedor) {
   contenedor.innerHTML = "";
   items.forEach(item => {
     if (!item.poster_path) return;
@@ -16,6 +63,7 @@ function mostrarResultados(items) {
   });
 }
 
+// Modal de detalle
 function abrirModal(item) {
   const modal = document.getElementById("modal");
   const detalle = document.getElementById("detalle");
@@ -27,21 +75,21 @@ function abrirModal(item) {
     <p>Fecha: ${item.release_date || item.first_air_date || "Desconocida"}</p>
   `;
   const punt = document.getElementById("puntuacion");
-  punt.value = miLista.find(x => x.id === item.id)?.puntuacion || 0;
+  punt.value = miLista.find(x => x.id===item.id)?.puntuacion || 0;
 
   const boton = document.getElementById("agregarLista");
   boton.onclick = () => {
     agregarAMiLista(item, parseInt(punt.value));
-    modal.style.display = "none";
+    modal.style.display='none';
   };
 
-  document.getElementById("cerrar").onclick = () => modal.style.display = "none";
-
-  modal.style.display = "block";
+  document.getElementById("cerrar").onclick = () => modal.style.display='none';
+  modal.style.display='block';
 }
 
+// Mi Lista
 function agregarAMiLista(item, puntuacion) {
-  const existe = miLista.find(x => x.id === item.id);
+  const existe = miLista.find(x => x.id===item.id);
   if (existe) {
     existe.puntuacion = puntuacion;
   } else {
@@ -52,22 +100,23 @@ function agregarAMiLista(item, puntuacion) {
 }
 
 function mostrarMiLista() {
-  const div = document.getElementById("miLista");
-  div.innerHTML = "";
-  miLista.forEach(item => {
-    const card = document.createElement("div");
+  contenedorMiLista.innerHTML = "";
+  miLista.forEach(item=>{
+    const card=document.createElement("div");
     card.classList.add("card");
-    card.innerHTML = `
+    card.innerHTML=`
       <img src="https://image.tmdb.org/t/p/w500${item.poster}">
       <h3>${item.title}</h3>
       <p>⭐ ${item.puntuacion}</p>
     `;
-    div.appendChild(card);
+    contenedorMiLista.appendChild(card);
   });
 }
 
-// Al cargar la página
+// Inicialización
 window.onload = () => {
   cargarTendencias();
+  cargarEstrenos();
   mostrarMiLista();
+  mostrarSeccion('tendencias');
 };
