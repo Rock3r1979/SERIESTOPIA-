@@ -1,4 +1,5 @@
-const apiKey = "bc2f8428b1238d724f9003cbf430ccee";
+const apiKey="bc2f8428b1238d724f9003cbf430ccee";
+
 const contenedorTendencias=document.getElementById("tendencias");
 const contenedorEstrenos=document.getElementById("estrenos");
 const contenedorAgenda=document.getElementById("agenda");
@@ -6,7 +7,9 @@ const contenedorMiLista=document.getElementById("miLista");
 const contenedorBuscar=document.getElementById("contenedorBuscar");
 
 let miLista=JSON.parse(localStorage.getItem("miLista"))||[];
+let alertas=JSON.parse(localStorage.getItem("alertas"))||[];
 
+// Mostrar sección
 function mostrarSeccion(id){
   document.querySelectorAll('.seccion').forEach(s=>s.style.display='none');
   document.getElementById(id).style.display='block';
@@ -23,39 +26,69 @@ function mostrarResultados(items, contenedor){
       <img src="https://image.tmdb.org/t/p/w200${item.poster_path}">
       <h4>${item.title||item.name}</h4>
       <p>⭐ ${item.vote_average}</p>
+      <div id="plataformas${item.id}"></div>
     `;
     div.onclick=()=>abrirModal(item);
     contenedor.appendChild(div);
+    cargarPlataformas(item.id, item.media_type||'movie');
   });
 }
 
-// Cargar tendencias
+// Cargar plataformas en tarjeta
+function cargarPlataformas(id, tipo){
+  fetch(`https://api.themoviedb.org/3/${tipo}/${id}/watch/providers?api_key=${apiKey}`)
+    .then(r=>r.json())
+    .then(d=>{
+      const cont=document.getElementById(`plataformas${id}`);
+      const providers=d.results.ES?.flatrate?.slice(0,3)||[];
+      providers.forEach(p=>{
+        const img=document.createElement("img");
+        img.src=`https://image.tmdb.org/t/p/w45${p.logo_path}`;
+        img.title=p.provider_name;
+        cont.appendChild(img);
+      });
+    });
+}
+
+// Cargar tendencias y estrenos
 function cargarTendencias(){
   fetch(`https://api.themoviedb.org/3/trending/all/day?api_key=${apiKey}&language=es-ES`)
     .then(r=>r.json()).then(d=>mostrarResultados(d.results,contenedorTendencias));
 }
-// Cargar estrenos
 function cargarEstrenos(){
   fetch(`https://api.themoviedb.org/3/movie/upcoming?api_key=${apiKey}&language=es-ES`)
     .then(r=>r.json()).then(d=>mostrarResultados(d.results,contenedorEstrenos));
   fetch(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${apiKey}&language=es-ES`)
     .then(r=>r.json()).then(d=>mostrarResultados(d.results,contenedorEstrenos));
 }
-// Agenda próximos capítulos
+
+// Agenda con alertas
 function cargarAgenda(){
+  contenedorAgenda.innerHTML="";
   fetch(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${apiKey}&language=es-ES`)
     .then(r=>r.json())
     .then(d=>{
-      contenedorAgenda.innerHTML="";
-      d.results.forEach(tv=>{
-        if(tv.next_episode_to_air){
-          const div=document.createElement("div");
-          div.classList.add("card");
-          div.innerHTML=`<h4>${tv.name}</h4>
-                         <p>Temporada ${tv.next_episode_to_air.season_number} - Cap ${tv.next_episode_to_air.episode_number}</p>
-                         <p>📅 ${tv.next_episode_to_air.air_date}</p>`;
-          contenedorAgenda.appendChild(div);
+      let items=d.results.filter(tv=>tv.next_episode_to_air);
+      items.sort((a,b)=>new Date(a.next_episode_to_air.air_date)-new Date(b.next_episode_to_air.air_date));
+      items.forEach(tv=>{
+        const div=document.createElement("div");
+        div.classList.add("card");
+        const fecha=new Date(tv.next_episode_to_air.air_date);
+        const hoy=new Date();
+        const mañana=new Date(); mañana.setDate(hoy.getDate()+1);
+        let destacado="";
+        if(alertas.find(a=>a.id===tv.id)){
+          const alerta=alertas.find(a=>a.id===tv.id);
+          const fechaAlerta=new Date(alerta.fecha);
+          if(fechaAlerta.toDateString()===hoy.toDateString() || fechaAlerta.toDateString()===mañana.toDateString()){
+            destacado="⚡ Próximo episodio!";
+          }
         }
+        div.innerHTML=`<h4>${tv.name}</h4>
+                       <p>Temporada ${tv.next_episode_to_air.season_number} - Cap ${tv.next_episode_to_air.episode_number}</p>
+                       <p>📅 ${tv.next_episode_to_air.air_date} ${destacado}</p>
+                       <button onclick="agregarAlerta(${tv.id}, '${tv.name}', '${tv.next_episode_to_air.air_date}')">📌 Recordarme</button>`;
+        contenedorAgenda.appendChild(div);
       });
     });
 }
@@ -74,11 +107,10 @@ function abrirModal(item){
     <p>⭐ ${item.vote_average}</p>
     <p>Fecha: ${item.release_date||item.first_air_date||"Desconocida"}</p>
   `;
-
   trailerContainer.innerHTML="";
   plataformasContainer.innerHTML="";
 
-  // Cargar plataformas
+  // Plataformas en modal
   fetch(`https://api.themoviedb.org/3/${item.media_type||'movie'}/${item.id}/watch/providers?api_key=${apiKey}`)
     .then(r=>r.json())
     .then(d=>{
@@ -95,6 +127,10 @@ function abrirModal(item){
 
   document.getElementById("agregarLista").onclick=()=>{
     agregarAMiLista(item,parseInt(document.getElementById("puntuacion").value));
+    modal.style.display='none';
+  };
+  document.getElementById("recordar").onclick=()=>{
+    agregarAlerta(item.id, item.title||item.name, item.release_date||item.first_air_date);
     modal.style.display='none';
   };
 
@@ -119,7 +155,6 @@ function agregarAMiLista(item,puntuacion){
   localStorage.setItem("miLista",JSON.stringify(miLista));
   mostrarMiLista();
 }
-
 function mostrarMiLista(){
   contenedorMiLista.innerHTML="";
   miLista.forEach(item=>{
@@ -140,27 +175,33 @@ function buscar(){
     .then(d=>mostrarResultados(d.results,contenedorBuscar));
 }
 
-// Export / Import Lista
+// Alertas
+function agregarAlerta(id, title, fecha){
+  if(!alertas.find(a=>a.id===id)) alertas.push({id,title,fecha});
+  localStorage.setItem("alertas", JSON.stringify(alertas));
+  cargarAgenda();
+}
+
+// Export / Import
 function exportarLista(){
   const dataStr="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(miLista));
   const a=document.createElement("a");
   a.setAttribute("href",dataStr);
   a.setAttribute("download","miLista.json");
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  document.body.appendChild(a); a.click(); a.remove();
 }
-
 function importarLista(event){
-  const file=event.target.files[0];
-  if(!file) return;
+  const file=event.target.files[0]; if(!file) return;
   const reader=new FileReader();
-  reader.onload=function(e){
-    miLista=JSON.parse(e.target.result);
-    localStorage.setItem("miLista",JSON.stringify(miLista));
-    mostrarMiLista();
-  };
+  reader.onload=function(e){ miLista=JSON.parse(e.target.result); localStorage.setItem("miLista",JSON.stringify(miLista)); mostrarMiLista(); };
   reader.readAsText(file);
+}
+function exportarAlertas(){
+  const dataStr="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(alertas));
+  const a=document.createElement("a");
+  a.setAttribute("href",dataStr);
+  a.setAttribute("download","alertas.json");
+  document.body.appendChild(a); a.click(); a.remove();
 }
 
 // Inicialización
