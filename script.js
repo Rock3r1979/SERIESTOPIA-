@@ -1,30 +1,49 @@
+// ============================================
+// CONFIGURACIÓN Y CREDENCIALES
+// ============================================
 const APIKEY = 'bc2f8428b1238d724f9003cbf430ccee';
 const BASEURL = 'https://api.themoviedb.org/3/';
+
+// Credenciales de Trakt (YA CONFIGURADAS)
+const TRAKT_CLIENT_ID = '5efb2f87ed72ed5e281be42a577bdd086ea30e020e0fca90dd02ba253bf75df7';
+const TRAKT_CLIENT_SECRET = '4b22c2cdc7a14bac4b23aa1d76fdf8b51bebf03e5af1a02aee03098f0e9815b8';
+
+// ============================================
+// VARIABLES GLOBALES
+// ============================================
 let itemActual = null;
 let peliculasPage = 1, seriesPage = 1;
 let buscando = false, busquedaPage = 1;
 let currentSearch;
-let filtroSeries = 'latest'; // latest, popular, top, lista
+let filtroSeries = 'latest';
 let filtroPeliculas = 'latest';
 
 // Variables para agenda
 let agendaItems = [];
 let agendaFiltroTipo = 'all';
-let agendaFiltroFecha = 'all'; // all, today, week, month
-let agendaOrden = 'fecha'; // fecha, rating, popularidad
+let agendaFiltroFecha = 'all';
+let agendaOrden = 'fecha';
 
+// Variable para temporadas
+let temporadaAbierta = null;
+
+// ============================================
+// INICIALIZACIÓN
+// ============================================
 document.addEventListener('DOMContentLoaded', () => {
   cargarPeliculas();
   cargarSeries();
   mostrarSeccion('series');
   comprobarRecordatorios();
+  
+  // Configurar event listeners
+  document.getElementById('cerrar').onclick = cerrarModal;
+  document.getElementById('agregarLista').onclick = agregarMiLista;
+  document.getElementById('recordar').onclick = guardarRecordatorio;
+  document.getElementById('verTrailer').onclick = verTrailer;
 });
 
-document.getElementById('cerrar').onclick = cerrarModal;
-document.getElementById('agregarLista').onclick = agregarMiLista;
-document.getElementById('recordar').onclick = guardarRecordatorio;
-document.getElementById('verTrailer').onclick = verTrailer;
-
+// Scroll infinito
 window.addEventListener('scroll', () => {
   if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 10) {
     if (document.getElementById('peliculas').style.display === 'grid') cargarPeliculas();
@@ -33,7 +52,9 @@ window.addEventListener('scroll', () => {
   }
 });
 
-// FUNCIONES PARA FORMATEAR FECHAS
+// ============================================
+// FUNCIONES DE FECHAS
+// ============================================
 function formatDate(fechaStr) {
   if (!fechaStr) return 'Desconocida';
   const partes = fechaStr.split('-');
@@ -80,7 +101,9 @@ function getFechaRelativa(fechaStr) {
   return `En ${Math.floor(diffDays/30)} meses`;
 }
 
-// Mostrar sección
+// ============================================
+// MOSTRAR SECCIONES
+// ============================================
 function mostrarSeccion(id) {
   document.querySelectorAll('.seccion').forEach(s => s.style.display = 'none');
   document.getElementById(id).style.display = 'grid';
@@ -120,7 +143,9 @@ function mostrarSeccion(id) {
   if (id === 'estrenos') cargarEstrenos();
 }
 
-// Tendencias
+// ============================================
+// FUNCIONES DE TENDENCIAS Y ESTRENOS
+// ============================================
 async function cargarTendencias() {
   const contenedor = document.getElementById('tendencias');
   contenedor.innerHTML = '<p>Cargando tendencias...</p>';
@@ -133,7 +158,6 @@ async function cargarTendencias() {
   }
 }
 
-// Próximos estrenos
 async function cargarEstrenos() {
   const contenedor = document.getElementById('estrenos');
   contenedor.innerHTML = '<p>Cargando próximos estrenos...</p>';
@@ -151,7 +175,9 @@ async function cargarEstrenos() {
   }
 }
 
-// SERIES Y PELÍCULAS
+// ============================================
+// FUNCIONES DE PELÍCULAS Y SERIES
+// ============================================
 async function cargarPeliculas() {
   let url;
   if (filtroPeliculas === 'lista') {
@@ -207,7 +233,9 @@ function mostrarResultados(items, contenedorId) {
   });
 }
 
+// ============================================
 // MODAL DETALLE
+// ============================================
 function abrirModal(item) {
   itemActual = item;
   document.getElementById('detalle').innerHTML = `
@@ -230,7 +258,9 @@ function cerrarModal() {
   document.getElementById('temporadasContainer').innerHTML = '';
 }
 
-// PLATAFORMAS (modal)
+// ============================================
+// PLATAFORMAS
+// ============================================
 async function cargarPlataformas(id, tipo) {
   const res = await fetch(`${BASEURL}${tipo}/${id}/watch/providers?api_key=${APIKEY}`);
   const data = await res.json();
@@ -250,8 +280,9 @@ async function cargarPlataformas(id, tipo) {
   }
 }
 
-// TEMPORADAS
-let temporadaAbierta = null;
+// ============================================
+// TEMPORADAS Y EPISODIOS
+// ============================================
 async function cargarTemporadas(item) {
   const res = await fetch(`${BASEURL}tv/${item.id}?api_key=${APIKEY}&language=es-ES`);
   const data = await res.json();
@@ -286,7 +317,9 @@ async function cargarTemporadas(item) {
   });
 }
 
-// ESTRELLAS
+// ============================================
+// SISTEMA DE ESTRELLAS
+// ============================================
 function dibujarEstrellas(item) {
   const container = document.getElementById('estrellasSerie');
   container.innerHTML = '';
@@ -353,7 +386,9 @@ function puntuarCapitulo(tvId, seasonNum, episodeNum, puntuacion) {
   localStorage.setItem('miLista', JSON.stringify(lista));
 }
 
+// ============================================
 // MI LISTA
+// ============================================
 function agregarMiLista() {
   let lista = JSON.parse(localStorage.getItem('miLista') || '[]');
   itemActual.miPuntuacion = itemActual.miPuntuacion || 0;
@@ -367,7 +402,9 @@ function cargarMiLista() {
   mostrarResultados(lista, 'miLista');
 }
 
+// ============================================
 // RECORDATORIOS
+// ============================================
 function guardarRecordatorio() {
   let recordatorios = JSON.parse(localStorage.getItem('recordatorios') || '[]');
   recordatorios.push(itemActual);
@@ -391,7 +428,9 @@ function comprobarRecordatorios() {
   });
 }
 
+// ============================================
 // TRAILER
+// ============================================
 async function verTrailer() {
   const tipo = itemActual.title ? 'movie' : 'tv';
   const res = await fetch(`${BASEURL}${tipo}/${itemActual.id}/videos?api_key=${APIKEY}&language=es-ES`);
@@ -405,7 +444,9 @@ async function verTrailer() {
   }
 }
 
-// BUSCAR
+// ============================================
+// BUSCADOR
+// ============================================
 function buscar(next = false) {
   if (!next) {
     busquedaPage = 1;
@@ -424,7 +465,9 @@ function buscar(next = false) {
   buscando = false;
 }
 
-// EXPORT/IMPORT
+// ============================================
+// EXPORTAR E IMPORTAR
+// ============================================
 function exportarLista() {
   const lista = localStorage.getItem('miLista');
   const blob = new Blob([lista], { type: 'application/json' });
@@ -460,43 +503,133 @@ function compartirLista() {
   prompt('Enlace compartible (temporal):', url);
 }
 
-// AGENDA MEJORADA CON FILTROS Y FECHAS
-async function cargarAgenda() {
-  const container = document.getElementById('agendaContainer');
-  container.innerHTML = '<p style="text-align:center;padding:2rem;">🔄 Cargando agenda con plataformas...</p>';
+// ============================================
+// FUNCIONES DE TRAKT (NUEVAS)
+// ============================================
+async function cargarCalendarioTrakt() {
+  const hoy = new Date();
+  const fechaInicio = hoy.toISOString().split('T')[0];
+  const dias = 30;
+  
+  const url = `https://api.trakt.tv/calendars/all/shows/${fechaInicio}/${dias}?extended=full`;
   
   try {
-    // Cargar múltiples páginas para tener más contenido
-    const [pelisRes1, pelisRes2, seriesRes1, seriesRes2] = await Promise.all([
-      fetch(`${BASEURL}movie/upcoming?api_key=${APIKEY}&language=es-ES&page=1`),
-      fetch(`${BASEURL}movie/upcoming?api_key=${APIKEY}&language=es-ES&page=2`),
-      fetch(`${BASEURL}tv/on_the_air?api_key=${APIKEY}&language=es-ES&page=1`),
-      fetch(`${BASEURL}tv/on_the_air?api_key=${APIKEY}&language=es-ES&page=2`)
-    ]);
+    const respuesta = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'trakt-api-version': '2',
+        'trakt-api-key': TRAKT_CLIENT_ID
+      }
+    });
     
-    const pelis1 = (await pelisRes1.json()).results;
-    const pelis2 = (await pelisRes2.json()).results;
-    const series1 = (await seriesRes1.json()).results;
-    const series2 = (await seriesRes2.json()).results;
-    
-    agendaItems = [...pelis1, ...pelis2, ...series1, ...series2];
-    
-    // Añadir información adicional
-    for (let item of agendaItems) {
-      item.tipo = item.title ? 'movie' : 'tv';
-      item.fecha = item.release_date || item.first_air_date;
-      item.fechaObj = parseDateStrict(item.fecha);
-      item.fechaRelativa = getFechaRelativa(item.fecha);
+    if (!respuesta.ok) {
+      console.log('Trakt no disponible, continuando solo con TMDb');
+      return [];
     }
     
+    const datos = await respuesta.json();
+    return datos;
+    
+  } catch (error) {
+    console.log('Error con Trakt, continuando solo con TMDb');
+    return [];
+  }
+}
+
+// ============================================
+// AGENDA MEJORADA CON TRAKT
+// ============================================
+async function cargarAgenda() {
+  const container = document.getElementById('agendaContainer');
+  container.innerHTML = '<p style="text-align:center;padding:2rem;">🔄 Cargando agenda...</p>';
+  
+  try {
+    // Cargar de TMDb
+    const [pelisRes, seriesRes] = await Promise.all([
+      fetch(`${BASEURL}movie/upcoming?api_key=${APIKEY}&language=es-ES&page=1`),
+      fetch(`${BASEURL}tv/on_the_air?api_key=${APIKEY}&language=es-ES&page=1`)
+    ]);
+    
+    const pelis = (await pelisRes.json()).results || [];
+    const series = (await seriesRes.json()).results || [];
+    
+    // Intentar cargar de Trakt (si falla, continuamos solo con TMDb)
+    let traktItems = [];
+    try {
+      const traktCalendar = await cargarCalendarioTrakt();
+      
+      for (const item of traktCalendar) {
+        if (!item.show) continue;
+        
+        const traktItem = {
+          id: item.show.ids.tmdb || `trakt-${item.show.ids.trakt}`,
+          name: item.show.title,
+          title: item.show.title,
+          first_air_date: item.first_aired.split('T')[0],
+          vote_average: item.show.rating || 0,
+          overview: item.episode.overview || item.show.overview,
+          tipo: 'tv',
+          source: 'trakt',
+          poster_path: null
+        };
+        
+        // Intentar obtener póster de TMDb
+        try {
+          const tmdbBusqueda = await fetch(
+            `${BASEURL}search/tv?api_key=${APIKEY}&query=${encodeURIComponent(item.show.title)}`
+          );
+          const tmdbData = await tmdbBusqueda.json();
+          if (tmdbData.results && tmdbData.results[0]) {
+            traktItem.poster_path = tmdbData.results[0].poster_path;
+          }
+        } catch (e) {
+          // Ignorar error de póster
+        }
+        
+        traktItems.push(traktItem);
+      }
+    } catch (e) {
+      console.log('Continuando sin Trakt');
+    }
+    
+    // Combinar todos los items
+    let todosItems = [...pelis, ...series, ...traktItems];
+    
+    // Eliminar duplicados
+    const itemsUnicos = [];
+    const idsVistos = new Set();
+    
+    for (const item of todosItems) {
+      if (!item.id) continue;
+      if (!idsVistos.has(item.id)) {
+        idsVistos.add(item.id);
+        itemsUnicos.push(item);
+      }
+    }
+    
+    // Añadir información adicional
+    for (let item of itemsUnicos) {
+      item.tipo = item.title ? 'movie' : 'tv';
+      item.fecha = item.release_date || item.first_air_date;
+      item.fechaObj = item.fecha ? parseDateStrict(item.fecha) : new Date('9999-12-31');
+      item.fechaRelativa = item.fecha ? getFechaRelativa(item.fecha) : 'Fecha TBA';
+    }
+    
+    // Ordenar por fecha
+    itemsUnicos.sort((a, b) => a.fechaObj - b.fechaObj);
+    
+    agendaItems = itemsUnicos;
     aplicarFiltrosAgenda();
     
   } catch (e) {
-    container.innerHTML = `<p style="text-align:center;color:#ff6b6b;">Error: ${e.message}. Revisa consola (F12).</p>`;
+    container.innerHTML = `<p style="text-align:center;color:#ff6b6b;">Error: ${e.message}</p>`;
   }
 }
 
 function aplicarFiltrosAgenda() {
+  if (!document.getElementById('filtroTipoAgenda')) return;
+  
   agendaFiltroTipo = document.getElementById('filtroTipoAgenda').value;
   agendaFiltroFecha = document.getElementById('filtroFechaAgenda').value;
   agendaOrden = document.getElementById('ordenAgenda').value;
@@ -566,31 +699,33 @@ async function mostrarAgenda(items) {
     div.classList.add('agendaItem');
     div.dataset.tipo = item.tipo;
     
-    // Plataformas
-    const plataformasHtml = await cargarPlataformasAgenda(item.id, item.tipo);
-    
     // Determinar color según fecha
     let fechaColor = '#666';
     if (item.fechaRelativa === '¡HOY!') fechaColor = '#ff6b6b';
     else if (item.fechaRelativa === 'Mañana') fechaColor = '#ffa502';
     else if (item.fechaRelativa.includes('días')) fechaColor = '#2ecc71';
     
+    // Badge de fuente
+    const fuenteBadge = item.source === 'trakt' 
+      ? '<span style="background:#ED1C24; color:white; padding:2px 8px; border-radius:12px; font-size:0.7rem; margin-left:5px;">TRAKT</span>'
+      : '<span style="background:#01d277; color:white; padding:2px 8px; border-radius:12px; font-size:0.7rem; margin-left:5px;">TMDB</span>';
+    
+    // Imagen (póster o placeholder)
+    const imagenSrc = item.poster_path 
+      ? `https://image.tmdb.org/t/p/w200${item.poster_path}`
+      : 'https://via.placeholder.com/200x300?text=Sin+imagen';
+    
     div.innerHTML = `
       <div style="display:flex; gap:15px;">
-        <img src="https://image.tmdb.org/t/p/w200${item.poster_path}" 
+        <img src="${imagenSrc}" 
              style="width:80px; height:120px; object-fit:cover; border-radius:8px;">
         <div style="flex:1;">
-          <strong style="font-size:1.2em;">${item.title || item.name}</strong><br>
+          <strong style="font-size:1.2em;">${item.title || item.name} ${fuenteBadge}</strong><br>
           <span style="color:#ccc;">${getDiaSemanaYFecha(item.fecha)}</span><br>
           <span style="color:${fechaColor}; font-weight:bold;">${item.fechaRelativa}</span><br>
           <span style="color:#ffd700;">⭐ ${item.vote_average?.toFixed(1) || 'N/A'}/10</span><br>
-          <span style="color:#888;">👥 ${item.vote_count?.toLocaleString() || 'N/A'} votos</span><br>
-          <span style="color:#888;">📊 Popularidad: ${Math.round(item.popularity || 0)}</span><br>
-          <div style="display:flex;align-items:center;gap:5px;margin:8px 0;">
-            ${plataformasHtml || '<span style="color:#888;">📺 Plataformas TBA</span>'}
-          </div>
           <button onclick='abrirModal(${JSON.stringify(item).replace(/'/g, "\\'")})' 
-                  style="padding:5px 15px; background:#e74c3c; color:white; border:none; border-radius:5px; cursor:pointer;">
+                  style="margin-top:10px; padding:5px 15px; background:#e74c3c; color:white; border:none; border-radius:5px; cursor:pointer;">
             Ver detalles
           </button>
         </div>
@@ -600,21 +735,7 @@ async function mostrarAgenda(items) {
   }
 }
 
-// Plataformas para agenda
-async function cargarPlataformasAgenda(id, tipo) {
-  try {
-    const res = await fetch(`${BASEURL}${tipo}/${id}/watch/providers?api_key=${APIKEY}`);
-    const data = await res.json();
-    if (data.results?.ES?.flatrate && data.results.ES.flatrate.length > 0) {
-      return data.results.ES.flatrate.slice(0, 4).map(p => 
-        `<img src="https://image.tmdb.org/t/p/w45/${p.logo_path}" 
-               title="${p.provider_name}" 
-               style="width:28px;height:28px;border-radius:4px;cursor:pointer;" 
-               onerror="this.style.display='none'">`
-      ).join('');
-    }
-  } catch (e) {
-    console.log('Plataformas no disponibles para', id);
-  }
-  return '';
+function filtrarAgenda(tipo) {
+  agendaFiltroTipo = tipo;
+  aplicarFiltrosAgenda();
 }
