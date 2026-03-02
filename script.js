@@ -164,7 +164,7 @@ async function cargarEstrenos() {
     const pelis = await pelisRes.json();
     const series = await seriesRes.json();
     const items = [...pelis.results, ...series.results];
-    mostrarResultados(items.slice(0, 20), 'estrenos');
+    mostrarResultados(items, 'estrenos');
   } catch (e) {
     contenedor.innerHTML = '<p>Error al cargar estrenos.</p>';
   }
