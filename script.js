@@ -145,7 +145,7 @@ async function cargarTendencias() {
   const contenedor = document.getElementById('tendencias');
   contenedor.innerHTML = '<p>Cargando tendencias...</p>';
   try {
-    const res = await fetch(`${BASEURL}trending/all/week?api_key=${APIKEY}&language=es-ES`);
+    const res = await fetch(`${BASEURL}trending/all/week?api_key=${APIKEY}&language=es-ES&page_size=50`);
     const data = await res.json();
     mostrarResultados(data.results, 'tendencias');
   } catch (e) {
