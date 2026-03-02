@@ -14,15 +14,23 @@ let currentSearch;
 let filtroSeries = 'latest';
 let filtroPeliculas = 'latest';
 
+// Variables para scroll infinito
+let tendenciasPage = 1;
+let tendenciasTotalPages = 1;
+let tendenciasCargando = false;
+
 // Variables para agenda
-let agendaItems = [];
+let agendaPage = 1;
+let agendaCargando = false;
+let agendaTotalPages = 1;
+let agendaTodasLasSeries = [];
 
 // Variable para temporadas
 let temporadaAbierta = null;
 
 // ============================================
 // INICIALIZACIÓN
-// ============================================
+//===========================================
 document.addEventListener('DOMContentLoaded', () => {
   cargarPeliculas();
   cargarSeries();
@@ -36,12 +44,30 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('verTrailer').onclick = verTrailer;
 });
 
-// Scroll infinito
+// ============================================
+// SCROLL INFINITO MEJORADO
+// ============================================
 window.addEventListener('scroll', () => {
-  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 10) {
-    if (document.getElementById('peliculas').style.display === 'grid') cargarPeliculas();
-    if (document.getElementById('series').style.display === 'grid') cargarSeries();
-    if (buscando) buscar(true);
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) { // 300px antes del final
+    const seccionActual = document.querySelector('.seccion[style*="display: grid"]');
+    
+    if (!seccionActual) return;
+    
+    if (seccionActual.id === 'peliculas' && !buscando) {
+      cargarPeliculas();
+    }
+    if (seccionActual.id === 'series' && !buscando) {
+      cargarSeries();
+    }
+    if (seccionActual.id === 'tendencias' && !tendenciasCargando && tendenciasPage <= tendenciasTotalPages) {
+      cargarMasTendencias();
+    }
+    if (seccionActual.id === 'agenda' && !agendaCargando && agendaPage <= agendaTotalPages) {
+      cargarAgenda(false);
+    }
+    if (buscando) {
+      buscar(true);
+    }
   }
 });
 
@@ -103,7 +129,6 @@ function mostrarSeccion(id) {
   
   if (id === 'miLista') cargarMiLista();
   if (id === 'agenda') {
-    // Crear los filtros si no existen
     const agendaSection = document.getElementById('agenda');
     agendaSection.innerHTML = `
       <div style="grid-column:1/-1; margin-bottom:20px;">
@@ -131,31 +156,90 @@ function mostrarSeccion(id) {
       </div>
       <div id="agendaContainer" style="grid-column:1/-1;"></div>
     `;
-    cargarAgenda();
+    cargarAgenda(true);
   }
   if (id === 'buscar') document.getElementById('contenedorBuscar').innerHTML = '';
-  if (id === 'tendencias') cargarTendencias();
+  if (id === 'tendencias') {
+    tendenciasPage = 1;
+    cargarTendencias();
+  }
   if (id === 'estrenos') cargarEstrenos();
 }
 
 // ============================================
-// FUNCIONES DE TENDENCIAS Y ESTRENOS
+// TENDENCIAS CON SCROLL INFINITO
 // ============================================
 async function cargarTendencias() {
   const contenedor = document.getElementById('tendencias');
-  contenedor.innerHTML = '<p>Cargando tendencias...</p>';
+  contenedor.innerHTML = '<p style="text-align:center;padding:2rem;">🔄 Cargando tendencias...</p>';
+  tendenciasPage = 1;
+  tendenciasCargando = false;
+  
   try {
-    const res = await fetch(`${BASEURL}trending/all/week?api_key=${APIKEY}&language=es-ES&page_size=50`);
+    const res = await fetch(`${BASEURL}trending/all/week?api_key=${APIKEY}&language=es-ES&page=1`);
     const data = await res.json();
+    
+    tendenciasTotalPages = data.total_pages;
     mostrarResultados(data.results, 'tendencias');
+    tendenciasPage = 2;
+    
   } catch (e) {
-    contenedor.innerHTML = '<p>Error al cargar tendencias.</p>';
+    contenedor.innerHTML = '<p style="text-align:center;color:#ff6b6b;">Error al cargar tendencias.</p>';
   }
 }
 
+async function cargarMasTendencias() {
+  if (tendenciasCargando || tendenciasPage > tendenciasTotalPages) return;
+  
+  tendenciasCargando = true;
+  
+  const contenedor = document.getElementById('tendencias');
+  
+  // Añadir indicador de carga
+  const loader = document.createElement('div');
+  loader.id = 'tendencias-loader';
+  loader.style.cssText = 'text-align:center;padding:1rem;grid-column:1/-1;';
+  loader.innerHTML = '🔄 Cargando más tendencias...';
+  contenedor.appendChild(loader);
+  
+  try {
+    const res = await fetch(`${BASEURL}trending/all/week?api_key=${APIKEY}&language=es-ES&page=${tendenciasPage}`);
+    const data = await res.json();
+    
+    // Quitar loader
+    document.getElementById('tendencias-loader')?.remove();
+    
+    // Añadir nuevos resultados
+    data.results.forEach(item => {
+      if (!item.poster_path) return;
+      const div = document.createElement('div');
+      div.classList.add('card');
+      div.innerHTML = `
+        <img src="https://image.tmdb.org/t/p/w300${item.poster_path}">
+        <h4>${item.title || item.name}</h4>
+        <p>⭐ ${item.vote_average?.toFixed(1) || 'N/A'}</p>
+        <p>📅 ${formatDate(item.release_date || item.first_air_date)}</p>
+      `;
+      div.onclick = () => abrirModal(item);
+      contenedor.appendChild(div);
+    });
+    
+    tendenciasPage++;
+    
+  } catch (e) {
+    document.getElementById('tendencias-loader')?.remove();
+    console.error('Error cargando más tendencias:', e);
+  } finally {
+    tendenciasCargando = false;
+  }
+}
+
+// ============================================
+// ESTRENOS SIN LÍMITE
+// ============================================
 async function cargarEstrenos() {
   const contenedor = document.getElementById('estrenos');
-  contenedor.innerHTML = '<p>Cargando próximos estrenos...</p>';
+  contenedor.innerHTML = '<p style="text-align:center;padding:2rem;">🔄 Cargando próximos estrenos...</p>';
   try {
     const [pelisRes, seriesRes] = await Promise.all([
       fetch(`${BASEURL}movie/upcoming?api_key=${APIKEY}&language=es-ES&page=1`),
@@ -164,9 +248,9 @@ async function cargarEstrenos() {
     const pelis = await pelisRes.json();
     const series = await seriesRes.json();
     const items = [...pelis.results, ...series.results];
-    mostrarResultados(items, 'estrenos');
+    mostrarResultados(items, 'estrenos'); // SIN LÍMITE
   } catch (e) {
-    contenedor.innerHTML = '<p>Error al cargar estrenos.</p>';
+    contenedor.innerHTML = '<p style="text-align:center;color:#ff6b6b;">Error al cargar estrenos.</p>';
   }
 }
 
@@ -210,10 +294,15 @@ async function cargarSeries() {
 function mostrarResultados(items, contenedorId) {
   const cont = document.getElementById(contenedorId);
   if (items.length === 0) {
-    cont.innerHTML = '<p>No hay resultados.</p>';
+    cont.innerHTML = '<p style="text-align:center;padding:2rem;">No hay resultados.</p>';
     return;
   }
-  cont.innerHTML = '';
+  
+  // Si es la primera carga, limpiar
+  if (contenedorId !== 'tendencias' || tendenciasPage === 2) {
+    cont.innerHTML = '';
+  }
+  
   items.forEach(item => {
     if (!item.poster_path) return;
     const div = document.createElement('div');
@@ -457,8 +546,10 @@ function buscar(next = false) {
     .then(data => {
       mostrarResultados(data.results, 'contenedorBuscar');
       busquedaPage++;
+    })
+    .finally(() => {
+      buscando = false;
     });
-  buscando = false;
 }
 
 // ============================================
@@ -500,37 +591,50 @@ function compartirLista() {
 }
 
 // ============================================
-// AGENDA MEJORADA CON PRÓXIMOS EPISODIOS
+// AGENDA CON SCROLL INFINITO
 // ============================================
-async function cargarAgenda() {
+async function cargarAgenda(reset = true) {
   const container = document.getElementById('agendaContainer');
-  container.innerHTML = '<p style="text-align:center;padding:2rem;">🔄 Cargando agenda con próximos episodios...</p>';
+  
+  if (reset) {
+    container.innerHTML = '<p style="text-align:center;padding:2rem;">🔄 Cargando agenda con próximos episodios...</p>';
+    agendaPage = 1;
+    agendaTodasLasSeries = [];
+    agendaCargando = false;
+  }
+  
+  if (agendaCargando) return;
+  agendaCargando = true;
   
   try {
-    // 1️⃣ Cargar series que están actualmente en emisión
-    const seriesRes = await fetch(`${BASEURL}tv/on_the_air?api_key=${APIKEY}&language=es-ES&page=1`);
+    // Cargar series de la página actual
+    const seriesRes = await fetch(`${BASEURL}tv/on_the_air?api_key=${APIKEY}&language=es-ES&page=${agendaPage}`);
     const seriesData = await seriesRes.json();
-    const series = seriesData.results || [];
     
-    // 2️⃣ Para cada serie, obtener detalles completos (incluye next_episode_to_air)
-    const seriesConDetalles = [];
+    agendaTotalPages = seriesData.total_pages;
+    const seriesPagina = seriesData.results || [];
     
-    for (let i = 0; i < Math.min(series.length, 20); i++) {
-      const serie = series[i];
-      
+    // Mostrar indicador de carga para esta página (solo si no es reset)
+    if (!reset) {
+      const loader = document.createElement('div');
+      loader.id = 'agenda-loader';
+      loader.style.cssText = 'text-align:center;padding:1rem;grid-column:1/-1;color:#ffd700;';
+      loader.innerHTML = '🔄 Cargando más series...';
+      container.appendChild(loader);
+    }
+    
+    // Para cada serie, obtener detalles
+    const promesasDetalles = seriesPagina.map(async (serie) => {
       try {
-        // Obtener detalles completos de la serie
         const detalleRes = await fetch(`${BASEURL}tv/${serie.id}?api_key=${APIKEY}&language=es-ES&append_to_response=watch/providers`);
         const detalle = await detalleRes.json();
         
-        // Información de plataformas
         let plataformas = [];
         if (detalle['watch/providers']?.results?.ES?.flatrate) {
           plataformas = detalle['watch/providers'].results.ES.flatrate.map(p => p.provider_name);
         }
         
-        // Crear item con toda la información
-        const item = {
+        return {
           id: detalle.id,
           name: detalle.name,
           poster_path: detalle.poster_path,
@@ -555,170 +659,183 @@ async function cargarAgenda() {
           number_of_episodes: detalle.number_of_episodes,
           in_production: detalle.in_production
         };
-        
-        seriesConDetalles.push(item);
-        
-      } catch (e) {
-        console.log('Error con serie:', serie.name, e);
+      } catch (err) {
+        console.log('Error con serie:', serie.name, err);
+        return null;
       }
-    }
-    
-    // 3️⃣ Separar series con próximo episodio y sin él
-    const conProximoEpisodio = seriesConDetalles.filter(s => s.next_episode);
-    const sinProximoEpisodio = seriesConDetalles.filter(s => !s.next_episode && s.status === "Returning Series");
-    
-    // 4️⃣ Ordenar por fecha del próximo episodio
-    conProximoEpisodio.sort((a, b) => {
-      const fechaA = new Date(a.next_episode.date);
-      const fechaB = new Date(b.next_episode.date);
-      return fechaA - fechaB;
     });
     
-    // 5️⃣ Combinar (primero las que tienen fecha próxima, luego las demás)
-    agendaItems = [...conProximoEpisodio, ...sinProximoEpisodio];
+    const seriesConDetalles = (await Promise.all(promesasDetalles)).filter(s => s !== null);
     
-    // 6️⃣ Mostrar
-    mostrarAgendaMejorada();
+    // Eliminar loader
+    document.getElementById('agenda-loader')?.remove();
+    
+    if (reset) {
+      agendaTodasLasSeries = seriesConDetalles;
+    } else {
+      agendaTodasLasSeries = [...agendaTodasLasSeries, ...seriesConDetalles];
+    }
+    
+    // Ordenar
+    const conProximoEpisodio = agendaTodasLasSeries.filter(s => s.next_episode);
+    const sinProximoEpisodio = agendaTodasLasSeries.filter(s => !s.next_episode && s.status === "Returning Series");
+    const otras = agendaTodasLasSeries.filter(s => !s.next_episode && s.status !== "Returning Series");
+    
+    conProximoEpisodio.sort((a, b) => new Date(a.next_episode.date) - new Date(b.next_episode.date));
+    
+    const todasOrdenadas = [...conProximoEpisodio, ...sinProximoEpisodio, ...otras];
+    
+    if (reset) {
+      mostrarAgendaMejorada(todasOrdenadas);
+    } else {
+      // Añadir solo las nuevas
+      const nuevasSeries = todasOrdenadas.slice(-seriesConDetalles.length);
+      nuevasSeries.forEach(serie => {
+        const tarjeta = crearTarjetaAgenda(serie);
+        container.appendChild(tarjeta);
+      });
+    }
+    
+    agendaPage++;
     
   } catch (e) {
     console.error('Error:', e);
-    container.innerHTML = `<p style="text-align:center;color:#ff6b6b;">Error al cargar: ${e.message}</p>`;
+    if (reset) {
+      container.innerHTML = `<p style="text-align:center;color:#ff6b6b;">Error al cargar: ${e.message}</p>`;
+    }
+  } finally {
+    agendaCargando = false;
   }
 }
 
-function mostrarAgendaMejorada() {
+function crearTarjetaAgenda(serie) {
+  const div = document.createElement('div');
+  div.classList.add('agendaItem');
+  
+  let estadoTexto = '';
+  let estadoColor = '';
+  
+  if (serie.next_episode) {
+    const fecha = new Date(serie.next_episode.date);
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    
+    const diffDays = Math.ceil((fecha - hoy) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      estadoTexto = '¡HOY!';
+      estadoColor = '#ff6b6b';
+    } else if (diffDays === 1) {
+      estadoTexto = 'Mañana';
+      estadoColor = '#ffa502';
+    } else if (diffDays <= 7) {
+      estadoTexto = `Esta semana (${fecha.toLocaleDateString('es-ES', { weekday: 'long' })})`;
+      estadoColor = '#2ecc71';
+    } else if (diffDays <= 30) {
+      estadoTexto = `Este mes (${fecha.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })})`;
+      estadoColor = '#3498db';
+    } else {
+      estadoTexto = `Próximamente (${fecha.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })})`;
+      estadoColor = '#9b59b6';
+    }
+  } else if (serie.status === "Returning Series") {
+    estadoTexto = 'En emisión - fecha por anunciar';
+    estadoColor = '#f39c12';
+  } else if (serie.status === "Ended") {
+    estadoTexto = 'Finalizada';
+    estadoColor = '#7f8c8d';
+  } else if (serie.status === "Canceled") {
+    estadoTexto = 'Cancelada';
+    estadoColor = '#e74c3c';
+  } else {
+    estadoTexto = serie.status || 'Estado desconocido';
+    estadoColor = '#95a5a6';
+  }
+  
+  const todasPlataformas = [...(serie.networks || []), ...(serie.plataformas || [])];
+  const plataformasUnicas = [...new Set(todasPlataformas)];
+  
+  const imagenSrc = serie.poster_path 
+    ? `https://image.tmdb.org/t/p/w200${serie.poster_path}`
+    : 'https://via.placeholder.com/200x300?text=Sin+imagen';
+  
+  let html = `
+    <div style="display:flex; gap:15px;">
+      <img src="${imagenSrc}" style="width:100px; height:150px; object-fit:cover; border-radius:8px;">
+      <div style="flex:1;">
+        <strong style="font-size:1.3em;">${serie.name}</strong><br>
+        <span style="color:${estadoColor}; font-weight:bold; display:inline-block; padding:2px 8px; border-radius:12px; background:${estadoColor}20; margin:5px 0;">
+          ${estadoTexto}
+        </span><br>
+  `;
+  
+  if (serie.next_episode) {
+    html += `
+      <div style="background:#2c3e50; padding:8px; border-radius:8px; margin:8px 0;">
+        <strong>📺 Próximo episodio:</strong><br>
+        <span>T${serie.next_episode.season}xE${serie.next_episode.episode} - ${serie.next_episode.name}</span><br>
+        <span style="color:#ffd700;">📅 ${new Date(serie.next_episode.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span><br>
+        <small style="color:#b0b0b0;">${serie.next_episode.overview?.substring(0, 100)}${serie.next_episode.overview?.length > 100 ? '...' : ''}</small>
+      </div>
+    `;
+  } else if (serie.last_episode) {
+    html += `
+      <div style="background:#34495e; padding:8px; border-radius:8px; margin:8px 0;">
+        <strong>📺 Último episodio:</strong><br>
+        <span>T${serie.last_episode.season}xE${serie.last_episode.episode}</span><br>
+        <span>📅 ${new Date(serie.last_episode.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+      </div>
+    `;
+  }
+  
+  if (plataformasUnicas.length > 0) {
+    html += `
+      <div style="margin:8px 0;">
+        <strong>📡 Disponible en:</strong><br>
+        <span style="color:#ffd700;">${plataformasUnicas.join(' • ')}</span>
+      </div>
+    `;
+  }
+  
+  html += `
+        <div style="display:flex; gap:15px; margin-top:8px; font-size:0.9rem; color:#b0b0b0;">
+          <span>⭐ ${serie.vote_average?.toFixed(1) || 'N/A'}</span>
+          <span>📊 ${serie.number_of_seasons || '?'} temporada${serie.number_of_seasons !== 1 ? 's' : ''}</span>
+          <span>📺 ${serie.number_of_episodes || '?'} episodios</span>
+        </div>
+        <button onclick='abrirModal(${JSON.stringify(serie).replace(/'/g, "\\'")})' 
+                style="margin-top:10px; padding:5px 15px; background:#e74c3c; color:white; border:none; border-radius:5px; cursor:pointer;">
+          Ver detalles completos
+        </button>
+      </div>
+    </div>
+  `;
+  
+  div.innerHTML = html;
+  return div;
+}
+
+function mostrarAgendaMejorada(series) {
   const container = document.getElementById('agendaContainer');
   const stats = document.getElementById('agendaStats');
   
-  if (agendaItems.length === 0) {
+  if (series.length === 0) {
     container.innerHTML = '<p style="text-align:center;padding:2rem;">No hay series en emisión</p>';
     if (stats) stats.innerHTML = '📊 0 resultados';
     return;
   }
   
-  if (stats) stats.innerHTML = `📊 Mostrando ${agendaItems.length} series en emisión`;
+  if (stats) stats.innerHTML = `📊 Mostrando ${series.length} series en emisión`;
   container.innerHTML = '';
   
-  agendaItems.forEach(serie => {
-    const div = document.createElement('div');
-    div.classList.add('agendaItem');
-    
-    // Determinar estado y colores
-    let estadoTexto = '';
-    let estadoColor = '';
-    
-    if (serie.next_episode) {
-      const fecha = new Date(serie.next_episode.date);
-      const hoy = new Date();
-      hoy.setHours(0, 0, 0, 0);
-      
-      const diffTime = fecha - hoy;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (diffDays === 0) {
-        estadoTexto = '¡HOY!';
-        estadoColor = '#ff6b6b';
-      } else if (diffDays === 1) {
-        estadoTexto = 'Mañana';
-        estadoColor = '#ffa502';
-      } else if (diffDays <= 7) {
-        estadoTexto = `Esta semana (${fecha.toLocaleDateString('es-ES', { weekday: 'long' })})`;
-        estadoColor = '#2ecc71';
-      } else if (diffDays <= 30) {
-        estadoTexto = `Este mes (${fecha.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })})`;
-        estadoColor = '#3498db';
-      } else {
-        estadoTexto = `Próximamente (${fecha.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })})`;
-        estadoColor = '#9b59b6';
-      }
-    } else if (serie.status === "Returning Series") {
-      estadoTexto = 'En emisión - fecha por anunciar';
-      estadoColor = '#f39c12';
-    } else if (serie.status === "Ended") {
-      estadoTexto = 'Finalizada';
-      estadoColor = '#7f8c8d';
-    } else if (serie.status === "Canceled") {
-      estadoTexto = 'Cancelada';
-      estadoColor = '#e74c3c';
-    } else {
-      estadoTexto = serie.status || 'Estado desconocido';
-      estadoColor = '#95a5a6';
-    }
-    
-    // Combinar networks y plataformas
-    const todasPlataformas = [...(serie.networks || []), ...(serie.plataformas || [])];
-    const plataformasUnicas = [...new Set(todasPlataformas)];
-    
-    // Imagen
-    const imagenSrc = serie.poster_path 
-      ? `https://image.tmdb.org/t/p/w200${serie.poster_path}`
-      : 'https://via.placeholder.com/200x300?text=Sin+imagen';
-    
-    // Construir HTML
-    let html = `
-      <div style="display:flex; gap:15px;">
-        <img src="${imagenSrc}" style="width:100px; height:150px; object-fit:cover; border-radius:8px;">
-        <div style="flex:1;">
-          <strong style="font-size:1.3em;">${serie.name}</strong><br>
-          <span style="color:${estadoColor}; font-weight:bold; display:inline-block; padding:2px 8px; border-radius:12px; background:${estadoColor}20; margin:5px 0;">
-            ${estadoTexto}
-          </span><br>
-    `;
-    
-    // Información del próximo episodio
-    if (serie.next_episode) {
-      html += `
-        <div style="background:#2c3e50; padding:8px; border-radius:8px; margin:8px 0;">
-          <strong>📺 Próximo episodio:</strong><br>
-          <span>T${serie.next_episode.season}xE${serie.next_episode.episode} - ${serie.next_episode.name}</span><br>
-          <span style="color:#ffd700;">📅 ${new Date(serie.next_episode.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span><br>
-          <small style="color:#b0b0b0;">${serie.next_episode.overview?.substring(0, 100)}${serie.next_episode.overview?.length > 100 ? '...' : ''}</small>
-        </div>
-      `;
-    } else if (serie.last_episode) {
-      html += `
-        <div style="background:#34495e; padding:8px; border-radius:8px; margin:8px 0;">
-          <strong>📺 Último episodio:</strong><br>
-          <span>T${serie.last_episode.season}xE${serie.last_episode.episode}</span><br>
-          <span>📅 ${new Date(serie.last_episode.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-        </div>
-      `;
-    }
-    
-    // Plataformas y networks
-    if (plataformasUnicas.length > 0) {
-      html += `
-        <div style="margin:8px 0;">
-          <strong>📡 Disponible en:</strong><br>
-          <span style="color:#ffd700;">${plataformasUnicas.join(' • ')}</span>
-        </div>
-      `;
-    }
-    
-    // Información general
-    html += `
-          <div style="display:flex; gap:15px; margin-top:8px; font-size:0.9rem; color:#b0b0b0;">
-            <span>⭐ ${serie.vote_average?.toFixed(1) || 'N/A'}</span>
-            <span>📊 ${serie.number_of_seasons || '?'} temporada${serie.number_of_seasons !== 1 ? 's' : ''}</span>
-            <span>📺 ${serie.number_of_episodes || '?'} episodios</span>
-          </div>
-          <button onclick='abrirModal(${JSON.stringify(serie).replace(/'/g, "\\'")})' 
-                  style="margin-top:10px; padding:5px 15px; background:#e74c3c; color:white; border:none; border-radius:5px; cursor:pointer;">
-            Ver detalles completos
-          </button>
-        </div>
-      </div>
-    `;
-    
-    div.innerHTML = html;
-    container.appendChild(div);
+  series.forEach(serie => {
+    const tarjeta = crearTarjetaAgenda(serie);
+    container.appendChild(tarjeta);
   });
 }
 
-// Función para filtrar por tipo (compatible con el HTML original)
 function aplicarFiltrosAgenda() {
-  // Como ahora tenemos una agenda mejorada, simplemente recargamos
-  cargarAgenda();
+  cargarAgenda(true);
 }
 
 function filtrarAgenda(tipo) {
