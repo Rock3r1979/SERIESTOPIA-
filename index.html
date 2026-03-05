@@ -12,7 +12,6 @@
   <h1>🎬 SERIESTOPIA</h1>
   <nav>
     <button onclick="mostrarSeccion('tendencias')">🔥 Tendencias</button>
-    <button onclick="mostrarSeccion('novedades')">✨ Novedades</button>
     <button onclick="mostrarSeccion('peliculas')">🎞 Películas</button>
     <button onclick="mostrarSeccion('series')">📺 Series</button>
     <button onclick="mostrarSeccion('agenda')">🗓 Agenda</button>
@@ -43,15 +42,6 @@
   <div id="tendenciasContainer" class="grid"></div>
 </section>
 
-<!-- NOVEDADES CON FILTROS -->
-<section id="novedades" class="seccion">
-  <div class="filtros-seccion">
-    <button onclick="cambiarTipoNovedades('tv')" class="filtro-btn active" id="filtroNovedadesTv">📺 Series</button>
-    <button onclick="cambiarTipoNovedades('movie')" class="filtro-btn" id="filtroNovedadesMovie">🎬 Películas</button>
-  </div>
-  <div id="novedadesContainer" class="grid"></div>
-</section>
-
 <!-- PELÍCULAS -->
 <section id="peliculas" class="seccion grid"></section>
 
@@ -61,11 +51,10 @@
 <!-- AGENDA HÍBRIDA -->
 <section id="agenda" class="seccion">
   <div class="filtros-agenda">
-    <!-- Selector de fuente -->
+    <!-- Selector de fuente - SOLO España e Internacional -->
     <div class="selector-fuente">
       <button onclick="cambiarFuenteAgenda('espana')" class="fuente-btn active" id="fuenteEspana">🇪🇸 Agenda España</button>
       <button onclick="cambiarFuenteAgenda('internacional')" class="fuente-btn" id="fuenteInternacional">🌍 Agenda Internacional</button>
-      <button onclick="cambiarFuenteAgenda('hibrida')" class="fuente-btn" id="fuenteHibrida">🔄 Híbrida</button>
     </div>
     
     <!-- Filtros secundarios -->
@@ -73,7 +62,7 @@
       <select id="filtroTipoAgenda" onchange="aplicarFiltrosAgenda()">
         <option value="all">Todos</option>
         <option value="movie">Películas</option>
-        <option value="tv">Series</option>
+        <option value="tv" selected>Series</option>
       </select>
       
       <select id="filtroFechaAgenda" onchange="aplicarFiltrosAgenda()">
