@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SERIESTOPIA</title>
+  <title>SERIESTOPIA - Tu guía de series y películas</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
@@ -12,12 +12,13 @@
   <h1>🎬 SERIESTOPIA</h1>
   <nav>
     <button onclick="mostrarSeccion('tendencias')">🔥 Tendencias</button>
-    <button onclick="mostrarSeccion('estrenos')">📅 Próximos Estrenos</button>
+    <button onclick="mostrarSeccion('novedades')">✨ Novedades</button>
     <button onclick="mostrarSeccion('peliculas')">🎞 Películas</button>
     <button onclick="mostrarSeccion('series')">📺 Series</button>
     <button onclick="mostrarSeccion('agenda')">🗓 Agenda</button>
     <button onclick="mostrarSeccion('miLista')">📌 Mi Lista</button>
     <button onclick="mostrarSeccion('buscar')">🔍 Buscar</button>
+    <button onclick="mostrarSeccion('contacto')">📞 Contacto</button>
   </nav>
 </header>
 
@@ -33,19 +34,125 @@
   <div id="contenedorBuscar" class="grid"></div>
 </section>
 
-<!-- SECCIONES PRINCIPALES -->
-<section id="tendencias" class="seccion grid"></section>
-<section id="estrenos"  class="seccion grid"></section>
+<!-- TENDENCIAS CON FILTROS -->
+<section id="tendencias" class="seccion">
+  <div class="filtros-seccion">
+    <button onclick="cambiarTipoTendencias('tv')" class="filtro-btn active" id="filtroTendenciasTv">📺 Series</button>
+    <button onclick="cambiarTipoTendencias('movie')" class="filtro-btn" id="filtroTendenciasMovie">🎬 Películas</button>
+  </div>
+  <div id="tendenciasContainer" class="grid"></div>
+</section>
+
+<!-- NOVEDADES CON FILTROS -->
+<section id="novedades" class="seccion">
+  <div class="filtros-seccion">
+    <button onclick="cambiarTipoNovedades('tv')" class="filtro-btn active" id="filtroNovedadesTv">📺 Series</button>
+    <button onclick="cambiarTipoNovedades('movie')" class="filtro-btn" id="filtroNovedadesMovie">🎬 Películas</button>
+  </div>
+  <div id="novedadesContainer" class="grid"></div>
+</section>
+
+<!-- PELÍCULAS -->
 <section id="peliculas" class="seccion grid"></section>
+
+<!-- SERIES -->
 <section id="series" class="seccion grid"></section>
+
+<!-- AGENDA HÍBRIDA -->
 <section id="agenda" class="seccion">
-  <div id="filtrosAgenda">
-    <button onclick="filtrarAgenda('movie')">Películas</button>
-    <button onclick="filtrarAgenda('tv')">Series</button>
+  <div class="filtros-agenda">
+    <!-- Selector de fuente -->
+    <div class="selector-fuente">
+      <button onclick="cambiarFuenteAgenda('espana')" class="fuente-btn active" id="fuenteEspana">🇪🇸 Agenda España</button>
+      <button onclick="cambiarFuenteAgenda('internacional')" class="fuente-btn" id="fuenteInternacional">🌍 Agenda Internacional</button>
+      <button onclick="cambiarFuenteAgenda('hibrida')" class="fuente-btn" id="fuenteHibrida">🔄 Híbrida</button>
+    </div>
+    
+    <!-- Filtros secundarios -->
+    <div class="filtros-secundarios">
+      <select id="filtroTipoAgenda" onchange="aplicarFiltrosAgenda()">
+        <option value="all">Todos</option>
+        <option value="movie">Películas</option>
+        <option value="tv">Series</option>
+      </select>
+      
+      <select id="filtroFechaAgenda" onchange="aplicarFiltrosAgenda()">
+        <option value="all">Todos</option>
+        <option value="today">Hoy</option>
+        <option value="week">Esta semana</option>
+        <option value="month">Este mes</option>
+      </select>
+      
+      <select id="ordenAgenda" onchange="aplicarFiltrosAgenda()">
+        <option value="fecha">Por fecha</option>
+        <option value="rating">Mejor valorados</option>
+        <option value="popularidad">Más populares</option>
+      </select>
+    </div>
+    
+    <div style="text-align:center; margin-top:10px;" id="agendaStats"></div>
   </div>
   <div id="agendaContainer"></div>
 </section>
-<section id="miLista"  class="seccion grid"></section>
+
+<!-- MI LISTA -->
+<section id="miLista" class="seccion grid"></section>
+
+<!-- CONTACTO -->
+<section id="contacto" class="seccion">
+  <div class="contacto-container">
+    <h2>📱 Conéctate con SERIESTOPIA</h2>
+    
+    <div class="redes-sociales">
+      <a href="https://twitter.com/seriestopia" target="_blank" class="red-social">
+        <span class="icono">𝕏</span>
+        <span>@seriestopia</span>
+      </a>
+      
+      <a href="https://instagram.com/seriestopia" target="_blank" class="red-social">
+        <span class="icono">📷</span>
+        <span>@seriestopia</span>
+      </a>
+      
+      <a href="https://tiktok.com/@seriestopia" target="_blank" class="red-social">
+        <span class="icono">🎵</span>
+        <span>@seriestopia</span>
+      </a>
+      
+      <a href="https://discord.gg/seriestopia" target="_blank" class="red-social">
+        <span class="icono">💬</span>
+        <span>Comunidad Discord</span>
+      </a>
+      
+      <a href="https://github.com/tu-usuario/seriestopia" target="_blank" class="red-social">
+        <span class="icono">🐙</span>
+        <span>GitHub</span>
+      </a>
+    </div>
+    
+    <div class="contacto-info">
+      <h3>📧 Contacto</h3>
+      <p>Email: <a href="mailto:info@seriestopia.vercel.app">info@seriestopia.vercel.app</a></p>
+      <p>🐦 Reporta bugs o sugiere mejoras en Twitter</p>
+      <p>⭐ Si te gusta el proyecto, ¡dale una estrella en GitHub!</p>
+    </div>
+    
+    <div class="newsletter">
+      <h3>📬 Newsletter</h3>
+      <p>Recibe los próximos estrenos en tu correo</p>
+      <div class="newsletter-form">
+        <input type="email" placeholder="Tu email" id="newsletterEmail">
+        <button onclick="suscribirNewsletter()">Suscribirse</button>
+      </div>
+    </div>
+    
+    <div class="colabora">
+      <h3>🤝 Colabora</h3>
+      <p>¿Eres desarrollador? ¡Ayúdanos a mejorar SERIESTOPIA!</p>
+      <a href="https://github.com/tu-usuario/seriestopia" target="_blank" class="boton-github">Contribuir en GitHub</a>
+    </div>
+  </div>
+</section>
 
 <!-- MODAL DETALLE -->
 <div id="modal" class="modal">
@@ -56,7 +163,7 @@
     <div id="temporadasContainer"></div>
 
     <div id="acciones">
-      <button id="agregarLista">Agregar a Mi Lista</button>
+      <button id="agregarLista">➕ Agregar a Mi Lista</button>
       <label>Puntuación:
         <select id="puntuacion">
           <option value="0">0</option>
@@ -80,7 +187,7 @@
 <!-- EXPORT / IMPORT -->
 <div id="exportImport">
   <button onclick="exportarLista()">💾 Exportar Mi Lista</button>
-  <label for="importFile" style="margin-left: 0.5rem;">Importar Mi Lista</label>
+  <label for="importFile" style="margin-left: 0.5rem;">📂 Importar Mi Lista</label>
   <input type="file" id="importFile" accept=".json" onchange="importarLista(event)">
   <button onclick="exportarAlertas()">💌 Exportar Alertas</button>
   <button onclick="compartirLista()">🔗 Compartir Mi Lista</button>
