@@ -431,7 +431,7 @@ async function enriquecerConPlataformas(items) {
 }
 
 // ============================================
-// MOSTRAR RESULTADOS CON PLATAFORMAS
+// MOSTRAR RESULTADOS CON PLATAFORMAS (CORREGIDO)
 // ============================================
 async function mostrarResultados(items, contenedorId) {
   const cont = document.getElementById(contenedorId);
@@ -472,7 +472,7 @@ async function mostrarResultados(items, contenedorId) {
       plataformasHTML = `
         <div class="card-plataformas">
           ${item.plataformas.slice(0, 3).map(p => 
-            `<img src="${p.logo}" title="${p.nombre}" class="plataforma-mini">`
+            `<img src="${p.logo}" title="${p.nombre}" style="width:25px !important; height:25px !important; border-radius:5px; object-fit:contain; background:rgba(255,255,255,0.1); padding:2px;" class="plataforma-mini">`
           ).join('')}
           ${item.plataformas.length > 3 ? `<span class="mas-plataformas">+${item.plataformas.length-3}</span>` : ''}
         </div>
@@ -524,7 +524,7 @@ async function agregarResultados(items, containerId) {
       plataformasHTML = `
         <div class="card-plataformas">
           ${item.plataformas.slice(0, 3).map(p => 
-            `<img src="${p.logo}" title="${p.nombre}" class="plataforma-mini">`
+            `<img src="${p.logo}" title="${p.nombre}" style="width:25px !important; height:25px !important; border-radius:5px; object-fit:contain; background:rgba(255,255,255,0.1); padding:2px;" class="plataforma-mini">`
           ).join('')}
           ${item.plataformas.length > 3 ? `<span class="mas-plataformas">+${item.plataformas.length-3}</span>` : ''}
         </div>
@@ -544,7 +544,7 @@ async function agregarResultados(items, containerId) {
 }
 
 // ============================================
-// MOSTRAR AGENDA
+// MOSTRAR AGENDA CON PLATAFORMAS (CORREGIDO)
 // ============================================
 function mostrarAgendaItems(items, reset = false) {
   const container = document.getElementById('agendaContainer');
@@ -631,7 +631,7 @@ function agruparPorFechaConPlataformas(items, container) {
         plataformasHTML = `
           <div class="plataformas-mini">
             ${item.plataformas.slice(0, 4).map(p => 
-              `<img src="${p.logo}" title="${p.nombre}">`
+              `<img src="${p.logo}" title="${p.nombre}" style="width:25px !important; height:25px !important; border-radius:5px; object-fit:contain; background:rgba(255,255,255,0.1); padding:2px;">`
             ).join('')}
             ${item.plataformas.length > 4 ? `<span>+${item.plataformas.length-4}</span>` : ''}
           </div>
@@ -641,24 +641,24 @@ function agruparPorFechaConPlataformas(items, container) {
       itemDiv.innerHTML = `
         <div style="display:flex; align-items:center; gap:15px;">
           ${item.poster_path ? 
-            `<img src="https://image.tmdb.org/t/p/w92${item.poster_path}" style="width:60px; border-radius:5px;">` : 
+            `<img src="https://image.tmdb.org/t/p/w92${item.poster_path}" style="width:60px; height:90px; border-radius:5px; object-fit:cover;">` : 
             `<div style="width:60px; height:90px; background:#333; border-radius:5px; display:flex; align-items:center; justify-content:center;">${tipoIcon}</div>`
           }
           <div style="flex:1;">
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <span class="tipo-badge ${item.tipo || ''}">${tipoIcon}</span>
-              <span class="source-badge ${item.source || ''}">${sourceIcon} ${sourceText}</span>
-              <h4>${titulo}</h4>
+              <span class="tipo-badge ${item.tipo || ''}" style="padding:2px 8px; border-radius:12px; font-size:0.8rem; ${item.tipo === 'pelicula' ? 'background:#ffd700; color:black;' : 'background:#4ecdc4; color:black;'}">${tipoIcon}</span>
+              <span class="source-badge ${item.source || ''}" style="padding:2px 8px; border-radius:12px; font-size:0.7rem; ${item.source === 'tracktv' ? 'background:#ffd700; color:black;' : item.source === 'tmdb_espana' ? 'background:#ff6b6b; color:white;' : 'background:#4ecdc4; color:black;'}">${sourceIcon} ${sourceText}</span>
+              <h4 style="margin:0; font-size:1rem;">${titulo}</h4>
             </div>
-            <p>${item.overview ? item.overview.substring(0, 100) + '...' : 'Sin descripción'}</p>
+            <p style="margin:5px 0; font-size:0.9rem; color:#ccc;">${item.overview ? item.overview.substring(0, 100) + '...' : 'Sin descripción'}</p>
             ${item.episode ? 
-              `<p><small>T${item.episode.season} E${item.episode.number} - ${item.episode.title}</small></p>` : 
+              `<p style="margin:5px 0; font-size:0.8rem;"><small>T${item.episode.season} E${item.episode.number} - ${item.episode.title}</small></p>` : 
               ''
             }
-            <p><small>⭐ ${item.vote_average?.toFixed(1) || 'N/A'}</small></p>
+            <p style="margin:5px 0; font-size:0.8rem;"><small>⭐ ${item.vote_average?.toFixed(1) || 'N/A'}</small></p>
             ${plataformasHTML}
           </div>
-          <button onclick='abrirModal(${JSON.stringify(item).replace(/'/g, "\\'")})'>Ver</button>
+          <button onclick='abrirModal(${JSON.stringify(item).replace(/'/g, "\\'")})' style="padding:8px 15px; background:var(--primary); border:none; border-radius:20px; color:white; cursor:pointer; font-weight:bold;">Ver</button>
         </div>
       `;
       
@@ -768,8 +768,14 @@ async function cargarPlataformas(id, tipo) {
     if (data.results?.ES?.flatrate) {
       data.results.ES.flatrate.forEach(p => {
         const img = document.createElement('img');
-        img.src = `https://image.tmdb.org/t/p/w45/${p.logo_path}`;
+        img.src = `https://image.tmdb.org/t/p/w45${p.logo_path}`;
         img.title = p.provider_name;
+        img.style.width = '45px';
+        img.style.height = '45px';
+        img.style.objectFit = 'contain';
+        img.style.background = 'rgba(255,255,255,0.1)';
+        img.style.padding = '5px';
+        img.style.borderRadius = '8px';
         cont.appendChild(img);
       });
     } else cont.innerHTML = '<p>No disponible en España</p>';
@@ -936,7 +942,7 @@ async function cargarMiLista() {
       plataformasHTML = `
         <div class="card-plataformas">
           ${item.plataformas.slice(0, 3).map(p => 
-            `<img src="${p.logo}" title="${p.nombre}" class="plataforma-mini">`
+            `<img src="${p.logo}" title="${p.nombre}" style="width:25px !important; height:25px !important; border-radius:5px; object-fit:contain; background:rgba(255,255,255,0.1); padding:2px;" class="plataforma-mini">`
           ).join('')}
           ${item.plataformas.length > 3 ? `<span class="mas-plataformas">+${item.plataformas.length-3}</span>` : ''}
         </div>
