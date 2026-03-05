@@ -20,11 +20,6 @@ let tendenciasPage = 1;
 let tendenciasTotalPages = 1;
 let tendenciasCargando = false;
 
-// Variables para novedades
-let novedadesPage = 1;
-let novedadesCargando = false;
-let novedadesTipo = 'tv';
-
 // Variables para tendencias con filtro
 let tendenciasTipo = 'tv';
 
@@ -32,14 +27,14 @@ let tendenciasTipo = 'tv';
 let agendaPage = 1;
 let agendaCargando = false;
 let agendaTotalPages = 1;
-let agendaFuente = 'espana'; // 'espana', 'internacional', 'hibrida'
+let agendaFuente = 'espana';
 
 // Variable para temporadas
 let temporadaAbierta = null;
 
-// Filtros de agenda
+// Filtros de agenda - SERIES POR DEFECTO
 let filtrosAgenda = {
-  tipo: 'all',
+  tipo: 'tv',
   fecha: 'all',
   orden: 'fecha'
 };
@@ -48,6 +43,7 @@ let filtrosAgenda = {
 // INICIALIZACIÓN
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
+  cargarListaDesdeURL();
   cargarPeliculas(true);
   cargarSeries(true);
   mostrarSeccion('series');
@@ -78,9 +74,6 @@ window.addEventListener('scroll', () => {
       }
       if (id === 'series' && !buscando) {
         cargarSeries(false);
-      }
-      if (id === 'novedades' && !novedadesCargando) {
-        cargarNovedades(false);
       }
       if (id === 'tendencias' && !tendenciasCargando) {
         cargarTendencias(false);
@@ -148,13 +141,6 @@ function mostrarSeccion(id) {
   if (id === 'peliculas') cargarPeliculas(true);
   if (id === 'series') cargarSeries(true);
   
-  if (id === 'novedades') {
-    novedadesTipo = 'tv';
-    novedadesPage = 1;
-    cargarNovedades(true);
-    actualizarBotonesActivos('novedades', 'tv');
-  }
-  
   if (id === 'tendencias') {
     tendenciasTipo = 'tv';
     tendenciasPage = 1;
@@ -165,6 +151,7 @@ function mostrarSeccion(id) {
   if (id === 'agenda') {
     agendaFuente = 'espana';
     agendaPage = 1;
+    document.getElementById('filtroTipoAgenda').value = 'tv';
     cargarAgenda(true);
     actualizarBotonesActivos('agenda', 'espana');
   }
@@ -243,54 +230,6 @@ async function cargarSeries(reset = false) {
 }
 
 // ============================================
-// NOVEDADES CON FILTROS
-// ============================================
-async function cargarNovedades(reset = false) {
-  if (novedadesCargando) return;
-  
-  if (reset) {
-    novedadesPage = 1;
-    document.getElementById('novedadesContainer').innerHTML = '';
-  }
-  
-  novedadesCargando = true;
-  mostrarLoader('novedadesContainer');
-  
-  try {
-    let endpoint;
-    if (novedadesTipo === 'tv') {
-      endpoint = `tv/on_the_air?api_key=${APIKEY}&language=es-ES&page=${novedadesPage}`;
-    } else {
-      endpoint = `movie/upcoming?api_key=${APIKEY}&language=es-ES&page=${novedadesPage}`;
-    }
-    
-    const res = await fetch(`${BASEURL}${endpoint}`);
-    const data = await res.json();
-    
-    ocultarLoader('novedadesContainer');
-    
-    if (reset) mostrarResultados(data.results, 'novedadesContainer');
-    else agregarResultados(data.results, 'novedadesContainer');
-    
-    novedadesPage++;
-    
-  } catch (e) {
-    ocultarLoader('novedadesContainer');
-    console.error('Error novedades:', e);
-    mostrarNotificacion('❌ Error cargando novedades', 'error');
-  } finally {
-    novedadesCargando = false;
-  }
-}
-
-function cambiarTipoNovedades(tipo) {
-  novedadesTipo = tipo;
-  novedadesPage = 1;
-  actualizarBotonesActivos('novedades', tipo);
-  cargarNovedades(true);
-}
-
-// ============================================
 // TENDENCIAS CON FILTROS
 // ============================================
 async function cargarTendencias(reset = false) {
@@ -339,7 +278,7 @@ function cambiarTipoTendencias(tipo) {
 }
 
 // ============================================
-// AGENDA HÍBRIDA
+// AGENDA
 // ============================================
 async function cargarAgenda(reset = false) {
   if (agendaCargando) return;
@@ -355,19 +294,21 @@ async function cargarAgenda(reset = false) {
   try {
     let items = [];
     
-    if (agendaFuente === 'espana' || agendaFuente === 'hibrida') {
+    if (agendaFuente === 'espana') {
       const espanaItems = await cargarEspañaTMDB(agendaPage);
       items = [...items, ...espanaItems];
     }
     
-    if (agendaFuente === 'internacional' || agendaFuente === 'hibrida') {
+    if (agendaFuente === 'internacional') {
       const internacionalItems = await cargarTrackTV(agendaPage);
       items = [...items, ...internacionalItems];
     }
     
+    // Enriquecer con plataformas
+    items = await enriquecerConPlataformas(items);
+    
     ocultarLoader('agendaContainer');
     
-    // Aplicar filtros
     items = aplicarFiltrosAgendaItems(items);
     
     mostrarAgendaItems(items, reset);
@@ -401,17 +342,14 @@ async function cargarEspañaTMDB(page) {
     const hoyStr = hoy.toISOString().split('T')[0];
     const dentro30Str = dentro30.toISOString().split('T')[0];
     
-    // Películas españolas
     const pelisRes = await fetch(
       `${BASEURL}discover/movie?api_key=${APIKEY}&language=es-ES&region=ES&with_original_language=es&primary_release_date.gte=${hoyStr}&primary_release_date.lte=${dentro30Str}&page=${page}`
     );
     
-    // Series españolas
     const seriesRes = await fetch(
       `${BASEURL}discover/tv?api_key=${APIKEY}&language=es-ES&with_origin_country=ES&first_air_date.gte=${hoyStr}&first_air_date.lte=${dentro30Str}&page=${page}`
     );
     
-    // Estrenos en plataformas
     const plataformasRes = await fetch(
       `${BASEURL}discover/movie?api_key=${APIKEY}&language=es-ES&watch_region=ES&with_watch_monetization_types=flatrate&primary_release_date.gte=${hoyStr}&primary_release_date.lte=${dentro30Str}&page=${page}`
     );
@@ -491,6 +429,36 @@ async function cargarTrackTV(page) {
 }
 
 // ============================================
+// ENRIQUECER CON PLATAFORMAS
+// ============================================
+async function enriquecerConPlataformas(items) {
+  const itemsConPlataformas = await Promise.all(items.map(async (item) => {
+    if (!item.tmdb_id && !item.id) return item;
+    
+    try {
+      const tipo = item.media_type === 'movie' || item.title ? 'movie' : 'tv';
+      const id = item.tmdb_id || item.id;
+      
+      const res = await fetch(`${BASEURL}${tipo}/${id}/watch/providers?api_key=${APIKEY}`);
+      const data = await res.json();
+      
+      if (data.results?.ES?.flatrate) {
+        item.plataformas = data.results.ES.flatrate.map(p => ({
+          logo: `https://image.tmdb.org/t/p/w45${p.logo_path}`,
+          nombre: p.provider_name
+        }));
+      }
+    } catch (e) {
+      console.error('Error cargando plataformas para item:', item.id);
+    }
+    
+    return item;
+  }));
+  
+  return itemsConPlataformas;
+}
+
+// ============================================
 // APLICAR FILTROS DE AGENDA
 // ============================================
 function aplicarFiltrosAgenda() {
@@ -503,7 +471,6 @@ function aplicarFiltrosAgenda() {
 }
 
 function aplicarFiltrosAgendaItems(items) {
-  // Filtrar por tipo
   if (filtrosAgenda.tipo !== 'all') {
     items = items.filter(item => {
       if (filtrosAgenda.tipo === 'movie') {
@@ -514,7 +481,6 @@ function aplicarFiltrosAgendaItems(items) {
     });
   }
   
-  // Filtrar por fecha
   if (filtrosAgenda.fecha !== 'all') {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
@@ -545,7 +511,6 @@ function aplicarFiltrosAgendaItems(items) {
     });
   }
   
-  // Ordenar
   switch(filtrosAgenda.orden) {
     case 'rating':
       items.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
@@ -592,7 +557,7 @@ function mostrarAgendaItems(items, reset = false) {
       pelisDiv.className = 'agenda-seccion';
       pelisDiv.innerHTML = '<h2 class="agenda-seccion-titulo" style="color:#ffd700;">🎬 PELÍCULAS</h2>';
       container.appendChild(pelisDiv);
-      agruparPorFecha(peliculas, container);
+      agruparPorFechaConPlataformas(peliculas, container);
     }
     
     if (series.length > 0) {
@@ -600,14 +565,14 @@ function mostrarAgendaItems(items, reset = false) {
       seriesDiv.className = 'agenda-seccion';
       seriesDiv.innerHTML = '<h2 class="agenda-seccion-titulo" style="color:#4ecdc4;">📺 SERIES</h2>';
       container.appendChild(seriesDiv);
-      agruparPorFecha(series, container);
+      agruparPorFechaConPlataformas(series, container);
     }
   } else {
-    agruparPorFecha(items, container);
+    agruparPorFechaConPlataformas(items, container);
   }
 }
 
-function agruparPorFecha(items, container) {
+function agruparPorFechaConPlataformas(items, container) {
   const agrupado = {};
   items.forEach(item => {
     const fecha = item.release_date || item.first_air_date || item.fecha;
@@ -652,6 +617,18 @@ function agruparPorFecha(items, container) {
         sourceText = 'Plataforma';
       }
       
+      let plataformasHTML = '';
+      if (item.plataformas && item.plataformas.length > 0) {
+        plataformasHTML = `
+          <div class="plataformas-mini">
+            ${item.plataformas.slice(0, 4).map(p => 
+              `<img src="${p.logo}" title="${p.nombre}">`
+            ).join('')}
+            ${item.plataformas.length > 4 ? `<span>+${item.plataformas.length-4}</span>` : ''}
+          </div>
+        `;
+      }
+      
       itemDiv.innerHTML = `
         <div style="display:flex; align-items:center; gap:15px;">
           ${item.poster_path ? 
@@ -670,6 +647,7 @@ function agruparPorFecha(items, container) {
               ''
             }
             <p><small>⭐ ${item.vote_average?.toFixed(1) || 'N/A'}</small></p>
+            ${plataformasHTML}
           </div>
           <button onclick='abrirModal(${JSON.stringify(item).replace(/'/g, "\\'")})'>Ver</button>
         </div>
@@ -687,6 +665,8 @@ function agruparPorFecha(items, container) {
 // ============================================
 function mostrarResultados(items, contenedorId) {
   const cont = document.getElementById(contenedorId);
+  cont.innerHTML = '';
+  
   if (items.length === 0) {
     cont.innerHTML = '<p style="text-align:center;padding:2rem;">No hay resultados.</p>';
     return;
@@ -886,13 +866,52 @@ function agregarMiLista() {
 
 function cargarMiLista() {
   const lista = JSON.parse(localStorage.getItem('miLista') || '[]');
-  mostrarResultados(lista, 'miLista');
+  const container = document.getElementById('miLista');
+  container.innerHTML = '';
+  
+  if (lista.length === 0) {
+    container.innerHTML = '<p style="text-align:center;padding:2rem;">Tu lista está vacía</p>';
+    return;
+  }
+  
+  lista.forEach(item => {
+    if (!item.poster_path) return;
+    
+    const div = document.createElement('div');
+    div.classList.add('card');
+    div.innerHTML = `
+      <img src="https://image.tmdb.org/t/p/w300${item.poster_path}" loading="lazy">
+      <h4>${item.title || item.name}</h4>
+      <p>⭐ ${item.vote_average?.toFixed(1) || 'N/A'}</p>
+      <p>📅 ${formatDate(item.release_date || item.first_air_date)}</p>
+      <button onclick="eliminarDeMiLista(${item.id}, event)" class="btn-eliminar">🗑️ Eliminar</button>
+    `;
+    
+    div.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('btn-eliminar')) {
+        abrirModal(item);
+      }
+    });
+    
+    container.appendChild(div);
+  });
+}
+
+function eliminarDeMiLista(id, event) {
+  event.stopPropagation();
+  
+  if (confirm('¿Seguro que quieres eliminar este item de tu lista?')) {
+    let lista = JSON.parse(localStorage.getItem('miLista') || '[]');
+    lista = lista.filter(item => item.id !== id);
+    localStorage.setItem('miLista', JSON.stringify(lista));
+    cargarMiLista();
+    mostrarNotificacion('✅ Eliminado de tu lista', 'success');
+  }
 }
 
 function guardarRecordatorio() {
   let recordatorios = JSON.parse(localStorage.getItem('recordatorios') || '[]');
   
-  // Evitar duplicados
   if (!recordatorios.find(i => i.id === itemActual.id)) {
     recordatorios.push(itemActual);
     localStorage.setItem('recordatorios', JSON.stringify(recordatorios));
@@ -1045,16 +1064,84 @@ function exportarAlertas() {
   mostrarNotificacion('✅ Alertas exportadas', 'success');
 }
 
-function compartirLista() {
-  const lista = localStorage.getItem('miLista') || '[]';
-  const listaStr = btoa(encodeURIComponent(lista));
-  const url = `${window.location.origin}/?lista=${listaStr}`;
+// ============================================
+// COMPARTIR LISTA CON ALIAS (Opción 3)
+// ============================================
+async function compartirLista() {
+  const alias = prompt("Elige un alias para compartir tu lista (ej: pepito):");
+  if (!alias) return;
   
-  navigator.clipboard.writeText(url).then(() => {
-    mostrarNotificacion('✅ URL copiada al portapapeles', 'success');
-  }).catch(() => {
-    mostrarNotificacion('❌ Error copiando URL', 'error');
-  });
+  const lista = JSON.parse(localStorage.getItem('miLista') || '[]');
+  
+  if (lista.length === 0) {
+    mostrarNotificacion('❌ Tu lista está vacía', 'error');
+    return;
+  }
+  
+  const data = {
+    alias: alias,
+    lista: lista,
+    fecha: new Date().toISOString()
+  };
+  
+  const jsonStr = JSON.stringify(data);
+  const compressed = btoa(encodeURIComponent(jsonStr));
+  
+  const urlLarga = `https://seriestopia.vercel.app/?data=${compressed}`;
+  
+  try {
+    mostrarNotificacion('🔄 Acortando URL...', 'info');
+    
+    const res = await fetch(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(urlLarga)}`);
+    const urlCorta = await res.text();
+    
+    if (urlCorta.includes('error')) {
+      throw new Error('Error al acortar');
+    }
+    
+    await navigator.clipboard.writeText(urlCorta);
+    mostrarNotificacion(`✅ URL corta copiada: ${urlCorta}`, 'success');
+    
+  } catch (e) {
+    try {
+      await navigator.clipboard.writeText(urlLarga);
+      mostrarNotificacion('✅ URL larga copiada (puedes acortarla con is.gd)', 'success');
+    } catch (clipError) {
+      prompt('Copia esta URL manualmente:', urlLarga);
+    }
+  }
+}
+
+// ============================================
+// CARGAR LISTA DESDE URL
+// ============================================
+function cargarListaDesdeURL() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const dataCompressed = urlParams.get('data');
+  
+  if (!dataCompressed) return;
+  
+  try {
+    const jsonStr = decodeURIComponent(atob(dataCompressed));
+    const data = JSON.parse(jsonStr);
+    
+    if (confirm(`¿Quieres cargar la lista de ${data.alias}? (Contiene ${data.lista.length} items)`)) {
+      
+      localStorage.setItem('miLista', JSON.stringify(data.lista));
+      
+      mostrarNotificacion(`✅ Lista de ${data.alias} cargada (${data.lista.length} items)`, 'success');
+      
+      if (document.getElementById('miLista').style.display === 'grid') {
+        cargarMiLista();
+      }
+      
+      window.history.replaceState({}, document.title, '/');
+    }
+    
+  } catch (e) {
+    console.error('Error cargando lista:', e);
+    mostrarNotificacion('❌ Error: El enlace no es válido', 'error');
+  }
 }
 
 // ============================================
@@ -1067,7 +1154,6 @@ function suscribirNewsletter() {
     return;
   }
   
-  // Aquí iría la lógica para guardar el email
   mostrarNotificacion('✅ ¡Gracias por suscribirte!', 'success');
   document.getElementById('newsletterEmail').value = '';
 }
@@ -1076,14 +1162,6 @@ function suscribirNewsletter() {
 // FUNCIONES AUXILIARES
 // ============================================
 function actualizarBotonesActivos(seccion, activo) {
-  if (seccion === 'novedades') {
-    document.querySelectorAll('#novedades .filtro-btn').forEach(btn => {
-      btn.classList.remove('active');
-    });
-    if (activo === 'tv') document.getElementById('filtroNovedadesTv')?.classList.add('active');
-    else document.getElementById('filtroNovedadesMovie')?.classList.add('active');
-  }
-  
   if (seccion === 'tendencias') {
     document.querySelectorAll('#tendencias .filtro-btn').forEach(btn => {
       btn.classList.remove('active');
@@ -1098,8 +1176,7 @@ function actualizarBotonesActivos(seccion, activo) {
     });
     const idMap = {
       'espana': 'fuenteEspana',
-      'internacional': 'fuenteInternacional',
-      'hibrida': 'fuenteHibrida'
+      'internacional': 'fuenteInternacional'
     };
     document.getElementById(idMap[activo])?.classList.add('active');
   }
@@ -1109,12 +1186,10 @@ function mostrarLoader(containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
   
-  // Evitar múltiples loaders
   if (container.querySelector('.loader')) return;
   
   const loader = document.createElement('div');
   loader.className = 'loader';
-  loader.style.cssText = 'text-align:center;padding:2rem;grid-column:1/-1;color:#ffd700;';
   loader.innerHTML = '🔄 Cargando...';
   container.appendChild(loader);
 }
@@ -1126,11 +1201,6 @@ function ocultarLoader(containerId) {
 function mostrarNotificacion(mensaje, tipo = 'info') {
   const toast = document.createElement('div');
   toast.className = `toast toast-${tipo}`;
-  toast.style.cssText = `
-    position: fixed; bottom: 20px; right: 20px; padding: 12px 24px;
-    border-radius: 8px; color: white; z-index: 3000;
-    animation: slideUp 0.3s ease; background: ${tipo === 'success' ? '#4caf50' : tipo === 'error' ? '#f44336' : '#2196f3'};
-  `;
   toast.textContent = mensaje;
   
   document.body.appendChild(toast);
