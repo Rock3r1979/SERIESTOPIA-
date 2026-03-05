@@ -1,6 +1,6 @@
-/* style.css MEJORADO - Mantiene tu estructura pero con mejor diseño */
-
+/* ============================================ */
 /* RESET Y VARIABLES */
+/* ============================================ */
 :root {
   --primary: #e74c3c;
   --primary-dark: #c0392b;
@@ -23,7 +23,9 @@ body {
   min-height: 100vh;
 }
 
-/* HEADER MEJORADO */
+/* ============================================ */
+/* HEADER */
+/* ============================================ */
 header {
   background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
@@ -65,7 +67,9 @@ nav button:hover {
   border-color: var(--primary);
 }
 
-/* SECCIONES */
+/* ============================================ */
+/* SECCIONES GENERALES */
+/* ============================================ */
 .seccion {
   display: none;
   padding: 2rem;
@@ -80,7 +84,83 @@ nav button:hover {
   padding: 1rem 0;
 }
 
-/* TARJETAS MEJORADAS */
+/* ============================================ */
+/* FILTROS */
+/* ============================================ */
+.filtros-seccion {
+  grid-column: 1/-1;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.filtro-btn {
+  padding: 0.8rem 2rem;
+  background: rgba(255,255,255,0.1);
+  border: 2px solid var(--primary);
+  color: white;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.filtro-btn:hover,
+.filtro-btn.active {
+  background: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+}
+
+.filtros-agenda {
+  grid-column: 1/-1;
+  margin-bottom: 2rem;
+}
+
+.selector-fuente {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.fuente-btn {
+  padding: 1rem 2rem;
+  background: rgba(255,255,255,0.05);
+  border: 2px solid transparent;
+  color: white;
+  border-radius: 40px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.fuente-btn:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: var(--primary);
+}
+
+.fuente-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4);
+}
+
+.filtros-secundarios {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ============================================ */
+/* TARJETAS */
+/* ============================================ */
 .card {
   background: rgba(255,255,255,0.1);
   backdrop-filter: blur(10px);
@@ -128,7 +208,9 @@ nav button:hover {
   gap: 0.3rem;
 }
 
-/* MODAL MEJORADO */
+/* ============================================ */
+/* MODAL */
+/* ============================================ */
 .modal {
   display: none;
   position: fixed;
@@ -174,7 +256,6 @@ nav button:hover {
   font-size: 2rem;
 }
 
-/* ACCIONES DEL MODAL */
 #acciones {
   margin-top: 1.5rem;
   display: flex;
@@ -201,7 +282,9 @@ nav button:hover {
   box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
 }
 
+/* ============================================ */
 /* PLATAFORMAS */
+/* ============================================ */
 #plataformasContainer {
   display: flex;
   gap: 10px;
@@ -221,7 +304,9 @@ nav button:hover {
   transform: scale(1.2);
 }
 
-/* TEMPORADAS MEJORADAS */
+/* ============================================ */
+/* TEMPORADAS */
+/* ============================================ */
 .temporada {
   background: rgba(255,255,255,0.05);
   margin: 0.8rem 0;
@@ -259,7 +344,9 @@ nav button:hover {
   border-radius: 5px;
 }
 
+/* ============================================ */
 /* ESTRELLAS */
+/* ============================================ */
 .star {
   cursor: pointer;
   font-size: 1.5rem;
@@ -275,84 +362,284 @@ nav button:hover {
   filter: drop-shadow(0 0 5px gold);
 }
 
-/* AGENDA MEJORADA */
-#filtrosAgenda {
-  grid-column: 1/-1;
+/* ============================================ */
+/* AGENDA */
+/* ============================================ */
+.agenda-grupo {
   margin-bottom: 2rem;
+  background: rgba(255,255,255,0.03);
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.agenda-fecha {
+  background: var(--primary);
+  padding: 0.8rem 1.5rem;
+  margin: 0;
+  font-size: 1.2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fecha-relativa {
+  font-size: 0.9rem;
+  background: rgba(255,255,255,0.2);
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+}
+
+.agenda-items {
+  padding: 1rem;
+}
+
+.agenda-item {
+  background: rgba(0,0,0,0.3);
+  margin-bottom: 0.5rem;
+  padding: 1rem;
+  border-radius: 10px;
+  border-left: 3px solid transparent;
+}
+
+.agenda-item.tracktv {
+  border-left-color: #ffd700;
+}
+
+.agenda-item.tmdb_espana {
+  border-left-color: #ff6b6b;
+}
+
+.agenda-item.tmdb_plataformas {
+  border-left-color: #4ecdc4;
+}
+
+.agenda-item.pelicula {
+  border-left-color: #ffd700;
+}
+
+.agenda-item.serie {
+  border-left-color: #4ecdc4;
+}
+
+.agenda-seccion {
+  margin-bottom: 3rem;
+}
+
+.agenda-seccion-titulo {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 3px solid;
+  display: inline-block;
+}
+
+.tipo-badge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.tipo-badge.pelicula {
+  background: #ffd700;
+  color: black;
+}
+
+.tipo-badge.serie {
+  background: #4ecdc4;
+  color: black;
+}
+
+.source-badge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 15px;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+.source-badge.tracktv {
+  background: #ffd700;
+  color: black;
+}
+
+.source-badge.tmdb_espana {
+  background: #ff6b6b;
+  color: white;
+}
+
+.source-badge.tmdb_plataformas {
+  background: #4ecdc4;
+  color: black;
+}
+
+#agendaStats {
+  font-size: 1.1rem;
+  padding: 1rem;
+  background: rgba(255,255,255,0.1);
+  border-radius: 30px;
+  margin-bottom: 1rem;
+  grid-column: 1/-1;
+}
+
+/* ============================================ */
+/* CONTACTO */
+/* ============================================ */
+.contacto-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.contacto-container h2 {
+  font-size: 2.5rem;
+  margin-bottom: 3rem;
+  background: linear-gradient(45deg, var(--primary), #f39c12);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.redes-sociales {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: center;
+  margin: 3rem 0;
+}
+
+.red-social {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  text-decoration: none;
+  color: white;
+  transition: all 0.3s;
+  padding: 1.5rem;
+  background: rgba(255,255,255,0.05);
+  border-radius: 20px;
+  min-width: 120px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.red-social:hover {
+  transform: translateY(-10px);
+  background: rgba(231, 76, 60, 0.2);
+  border-color: var(--primary);
+  box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
+}
+
+.red-social .icono {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.contacto-info {
+  margin: 3rem 0;
+  padding: 2rem;
+  background: rgba(255,255,255,0.05);
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.contacto-info h3 {
+  color: var(--primary);
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.contacto-info a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.3s;
+}
+
+.contacto-info a:hover {
+  color: #f39c12;
+  text-decoration: underline;
+}
+
+.newsletter {
+  margin: 3rem 0;
+  padding: 2rem;
+  background: linear-gradient(135deg, rgba(231,76,60,0.1), rgba(243,156,18,0.1));
+  border-radius: 20px;
+}
+
+.newsletter h3 {
+  color: var(--primary);
+  margin-bottom: 1rem;
+}
+
+.newsletter-form {
   display: flex;
   gap: 10px;
   justify-content: center;
   flex-wrap: wrap;
+  margin-top: 1rem;
 }
 
-#filtrosAgenda button,
-#filtrosAgenda select {
-  padding: 0.7rem 1.5rem;
-  border-radius: 25px;
-  border: 1px solid rgba(255,255,255,0.2);
-  background: rgba(255,255,255,0.1);
-  color: var(--text);
-  cursor: pointer;
-  transition: all 0.3s;
-  font-size: 0.95rem;
+.newsletter input {
+  padding: 1rem 1.5rem;
+  width: 300px;
+  max-width: 100%;
+  border-radius: 30px;
+  border: 2px solid var(--primary);
+  background: rgba(0,0,0,0.3);
+  color: white;
+  font-size: 1rem;
 }
 
-#filtrosAgenda button:hover,
-#filtrosAgenda select:hover {
+.newsletter input:focus {
+  outline: none;
+  box-shadow: 0 0 10px var(--primary);
+}
+
+.newsletter button {
+  padding: 1rem 2rem;
   background: var(--primary);
-  border-color: var(--primary);
-}
-
-#agendaContainer {
-  grid-column: 1/-1;
-}
-
-.agendaItem {
-  background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(10px);
-  margin-bottom: 1rem;
-  padding: 1.2rem;
-  border-radius: 15px;
-  border: 1px solid rgba(255,255,255,0.1);
-  transition: all 0.3s;
-  animation: slideIn 0.5s ease-out;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.agendaItem:hover {
-  transform: translateX(10px);
-  border-color: var(--primary);
-  box-shadow: 0 5px 20px rgba(231, 76, 60, 0.2);
-}
-
-.agendaItem button {
-  margin-top: 0.8rem;
-  padding: 0.5rem 1.2rem;
-  background: linear-gradient(45deg, var(--primary), var(--primary-dark));
   border: none;
-  border-radius: 20px;
+  border-radius: 30px;
   color: white;
   cursor: pointer;
-  transition: all 0.3s;
+  font-size: 1rem;
   font-weight: bold;
+  transition: all 0.3s;
+  border: 2px solid transparent;
 }
 
-.agendaItem button:hover {
+.newsletter button:hover {
+  background: transparent;
+  border-color: var(--primary);
   transform: scale(1.05);
-  box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
 }
 
-/* BUSCADOR MEJORADO */
+.colabora {
+  margin: 3rem 0;
+}
+
+.boton-github {
+  display: inline-block;
+  padding: 1rem 2rem;
+  background: #333;
+  color: white;
+  text-decoration: none;
+  border-radius: 30px;
+  font-weight: bold;
+  transition: all 0.3s;
+  border: 2px solid transparent;
+}
+
+.boton-github:hover {
+  background: transparent;
+  border-color: #333;
+  transform: scale(1.05);
+}
+
+/* ============================================ */
+/* BUSCADOR */
+/* ============================================ */
 #buscar {
   text-align: center;
 }
@@ -389,7 +676,9 @@ nav button:hover {
   transform: scale(1.05);
 }
 
-/* EXPORT/IMPORT MEJORADO */
+/* ============================================ */
+/* EXPORT/IMPORT */
+/* ============================================ */
 #exportImport {
   margin: 2rem 1rem;
   text-align: center;
@@ -417,7 +706,9 @@ nav button:hover {
   transform: translateY(-2px);
 }
 
-/* SELECTORES PERSONALIZADOS */
+/* ============================================ */
+/* SELECTORES */
+/* ============================================ */
 select {
   appearance: none;
   padding: 0.7rem 2.5rem 0.7rem 1.5rem;
@@ -442,7 +733,9 @@ select option {
   color: var(--text);
 }
 
-/* SCROLLBAR PERSONALIZADA */
+/* ============================================ */
+/* SCROLLBAR */
+/* ============================================ */
 ::-webkit-scrollbar {
   width: 10px;
 }
@@ -460,7 +753,9 @@ select option {
   background: var(--primary-dark);
 }
 
+/* ============================================ */
 /* RESPONSIVE */
+/* ============================================ */
 @media (max-width: 768px) {
   header h1 {
     font-size: 1.8rem;
@@ -491,14 +786,5 @@ select option {
   #acciones button,
   #acciones select {
     width: 100%;
-  }
-  
-  .agendaItem > div {
-    flex-direction: column;
-  }
-  
-  .agendaItem img {
-    width: 100%;
-    height: auto;
   }
 }
