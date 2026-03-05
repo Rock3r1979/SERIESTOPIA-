@@ -16,6 +16,7 @@
     <button onclick="mostrarSeccion('series')">📺 Series</button>
     <button onclick="mostrarSeccion('agenda')">🗓 Agenda</button>
     <button onclick="mostrarSeccion('miLista')">📌 Mi Lista</button>
+    <button onclick="mostrarSeccion('perfil')">👤 Perfil</button>
     <button onclick="mostrarSeccion('buscar')">🔍 Buscar</button>
     <button onclick="mostrarSeccion('contacto')">📞 Contacto</button>
   </nav>
@@ -51,13 +52,11 @@
 <!-- AGENDA HÍBRIDA -->
 <section id="agenda" class="seccion">
   <div class="filtros-agenda">
-    <!-- Selector de fuente - SOLO España e Internacional -->
     <div class="selector-fuente">
       <button onclick="cambiarFuenteAgenda('espana')" class="fuente-btn active" id="fuenteEspana">🇪🇸 Agenda España</button>
       <button onclick="cambiarFuenteAgenda('internacional')" class="fuente-btn" id="fuenteInternacional">🌍 Agenda Internacional</button>
     </div>
     
-    <!-- Filtros secundarios -->
     <div class="filtros-secundarios">
       <select id="filtroTipoAgenda" onchange="aplicarFiltrosAgenda()">
         <option value="all">Todos</option>
@@ -87,6 +86,46 @@
 <!-- MI LISTA -->
 <section id="miLista" class="seccion grid"></section>
 
+<!-- PERFIL DE USUARIO (NUEVO) -->
+<section id="perfil" class="seccion" style="display: none;">
+  <div class="perfil-container">
+    <h2>👤 Mi Perfil</h2>
+    
+    <div class="perfil-card">
+      <div class="perfil-avatar">
+        <span class="avatar-icon">👤</span>
+      </div>
+      
+      <div class="perfil-info">
+        <h3>Tu alias actual</h3>
+        <p id="aliasActualDisplay" class="alias-display">No tienes alias configurado</p>
+        
+        <div class="perfil-acciones">
+          <input type="text" id="aliasInput" placeholder="Escribe tu alias (ej: pepito)" class="alias-input">
+          <button onclick="guardarAlias()" class="btn-perfil">💾 Guardar Alias</button>
+        </div>
+        
+        <div class="perfil-stats">
+          <h3>Estadísticas</h3>
+          <p>📌 Items en Mi Lista: <span id="statsMiLista">0</span></p>
+          <p>📅 Recordatorios: <span id="statsRecordatorios">0</span></p>
+          <p>⭐ Series puntuadas: <span id="statsPuntuadas">0</span></p>
+        </div>
+        
+        <div class="perfil-compartir">
+          <h3>Compartir</h3>
+          <p>Comparte este enlace con tu alias:</p>
+          <div class="compartir-box">
+            <input type="text" id="enlaceCompartir" readonly value="https://seriestopia.vercel.app/" class="enlace-input">
+            <button onclick="copiarEnlacePerfil()" class="btn-copiar">📋 Copiar</button>
+          </div>
+          <button onclick="compartirLista()" class="btn-compartir">🔗 Compartir Mi Lista</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- CONTACTO -->
 <section id="contacto" class="seccion">
   <div class="contacto-container">
@@ -97,22 +136,18 @@
         <span class="icono">𝕏</span>
         <span>@seriestopia</span>
       </a>
-      
       <a href="https://instagram.com/seriestopia" target="_blank" class="red-social">
         <span class="icono">📷</span>
         <span>@seriestopia</span>
       </a>
-      
       <a href="https://tiktok.com/@seriestopia" target="_blank" class="red-social">
         <span class="icono">🎵</span>
         <span>@seriestopia</span>
       </a>
-      
       <a href="https://discord.gg/seriestopia" target="_blank" class="red-social">
         <span class="icono">💬</span>
         <span>Comunidad Discord</span>
       </a>
-      
       <a href="https://github.com/tu-usuario/seriestopia" target="_blank" class="red-social">
         <span class="icono">🐙</span>
         <span>GitHub</span>
@@ -148,9 +183,7 @@
   <div class="modal-content">
     <span id="cerrar" class="close">&times;</span>
     <div id="detalle"></div>
-
     <div id="temporadasContainer"></div>
-
     <div id="acciones">
       <button id="agregarLista">➕ Agregar a Mi Lista</button>
       <label>Puntuación:
@@ -166,7 +199,6 @@
       <button id="recordar">📌 Recordarme</button>
       <button id="verTrailer">🎥 Ver Trailer</button>
     </div>
-
     <div id="trailerContainer"></div>
     <div id="plataformasContainer"></div>
     <div id="estrellasSerie"></div>
