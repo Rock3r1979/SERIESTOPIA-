@@ -171,6 +171,7 @@ nav button:hover {
   cursor: pointer;
   border: 1px solid rgba(255,255,255,0.1);
   box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  position: relative;
 }
 
 .card:hover {
@@ -206,6 +207,32 @@ nav button:hover {
   align-items: center;
   justify-content: center;
   gap: 0.3rem;
+}
+
+.card .btn-eliminar {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background: #f44336;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+  padding: 5px 10px;
+  font-size: 0.9rem;
+}
+
+.card:hover .btn-eliminar {
+  opacity: 1;
+}
+
+.btn-eliminar:hover {
+  background: #d32f2f;
+  transform: translateX(-50%) scale(1.05);
 }
 
 /* ============================================ */
@@ -481,6 +508,24 @@ nav button:hover {
   grid-column: 1/-1;
 }
 
+.agenda-item .plataformas-mini {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
+  flex-wrap: wrap;
+}
+
+.agenda-item .plataformas-mini img {
+  width: 25px;
+  height: 25px;
+  border-radius: 5px;
+  transition: transform 0.3s;
+}
+
+.agenda-item .plataformas-mini img:hover {
+  transform: scale(1.2);
+}
+
 /* ============================================ */
 /* CONTACTO */
 /* ============================================ */
@@ -754,6 +799,52 @@ select option {
 }
 
 /* ============================================ */
+/* LOADER Y TOAST */
+/* ============================================ */
+.loader {
+  text-align: center;
+  padding: 2rem;
+  grid-column: 1/-1;
+  color: #ffd700;
+  font-size: 1.2rem;
+}
+
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  color: white;
+  z-index: 3000;
+  animation: slideUp 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.toast-success {
+  background: #4caf50;
+}
+
+.toast-error {
+  background: #f44336;
+}
+
+.toast-info {
+  background: #2196f3;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ============================================ */
 /* RESPONSIVE */
 /* ============================================ */
 @media (max-width: 768px) {
@@ -774,6 +865,11 @@ select option {
     height: 200px;
   }
   
+  .card .btn-eliminar {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+  }
+  
   .modal-content {
     padding: 1.5rem;
   }
@@ -787,86 +883,75 @@ select option {
   #acciones select {
     width: 100%;
   }
-}
-/* AÑADIR AL FINAL DE style.css */
-
-.btn-eliminar {
-  background: #f44336;
-  border: none;
-  border-radius: 5px;
-  color: white;
-  cursor: pointer;
-  padding: 5px 10px;
-  transition: all 0.3s;
-  font-size: 0.9rem;
-}
-
-.btn-eliminar:hover {
-  background: #d32f2f;
-  transform: scale(1.05);
-}
-
-.agenda-item .plataformas-mini {
-  display: flex;
-  gap: 5px;
-  margin-top: 5px;
-  flex-wrap: wrap;
-}
-
-.agenda-item .plataformas-mini img {
-  width: 25px;
-  height: 25px;
-  border-radius: 5px;
-  transition: transform 0.3s;
+  
+  .agenda-fecha {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+  
+  .agenda-item > div {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .agenda-item img {
+    margin: 0 auto;
+  }
+  
+  .red-social {
+    min-width: 100px;
+    padding: 1rem;
+  }
+  
+  .red-social .icono {
+    font-size: 2rem;
+  }
 }
 
-.agenda-item .plataformas-mini img:hover {
-  transform: scale(1.2);
-}
-
-.card {
-  position: relative;
-}
-
-.card .btn-eliminar {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80%;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.card:hover .btn-eliminar {
-  opacity: 1;
-}
-
-.toast {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  padding: 12px 24px;
-  border-radius: 8px;
-  color: white;
-  z-index: 3000;
-  animation: slideUp 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-
-.toast-success { background: #4caf50; }
-.toast-error { background: #f44336; }
-.toast-info { background: #2196f3; }
-
-@keyframes slideUp {
-  from { transform: translateY(100px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-.loader {
-  text-align: center;
-  padding: 2rem;
-  grid-column: 1/-1;
-  color: #ffd700;
-  font-size: 1.2rem;
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+  }
+  
+  .card img {
+    height: 160px;
+  }
+  
+  .card h4 {
+    font-size: 0.9rem;
+  }
+  
+  .filtro-btn,
+  .fuente-btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .selector-fuente {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filtros-secundarios select {
+    width: 100%;
+  }
+  
+  .contacto-container {
+    padding: 1rem;
+  }
+  
+  .redes-sociales {
+    gap: 1rem;
+  }
+  
+  .newsletter-form {
+    flex-direction: column;
+  }
+  
+  .newsletter input,
+  .newsletter button {
+    width: 100%;
+  }
 }
