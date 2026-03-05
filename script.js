@@ -29,6 +29,22 @@ let filtrosAgenda = {
   orden: 'fecha'
 };
 
+// Mapeo de proveedores para logos
+const proveedoresEspaña = {
+  8: 'Netflix',
+  9: 'Amazon Prime Video',
+  337: 'Disney+',
+  384: 'HBO Max',
+  2: 'Apple TV',
+  149: 'Movistar+',
+  63: 'Filmin',
+  188: 'SkyShowtime',
+  167: 'Rakuten TV',
+  16: 'Mitele',
+  17: 'Atresplayer',
+  150: 'Orange TV'
+};
+
 // ============================================
 // INICIALIZACIÓN
 // ============================================
@@ -274,20 +290,25 @@ async function cargarAgenda(reset = false) {
   try {
     let items = [];
     
-    if (agendaFuente === 'espana') {
+    if (agendaFuente === 'espana' || agendaFuente === 'hibrida') {
       const espanaItems = await cargarEspañaTMDB(agendaPage);
       items = [...items, ...espanaItems];
     }
     
-    if (agendaFuente === 'internacional') {
+    if (agendaFuente === 'internacional' || agendaFuente === 'hibrida') {
       const internacionalItems = await cargarTrackTV(agendaPage);
       items = [...items, ...internacionalItems];
     }
     
+    // Enriquecer con plataformas
     items = await enriquecerConPlataformas(items);
+    
+    // Aplicar filtros
     items = aplicarFiltrosAgendaItems(items);
+    
     mostrarAgendaItems(items, reset);
     agendaPage++;
+    
   } catch (e) {
     console.error('Error agenda:', e);
     mostrarNotificacion('❌ Error cargando agenda', 'error');
@@ -316,14 +337,17 @@ async function cargarEspañaTMDB(page) {
     const hoyStr = hoy.toISOString().split('T')[0];
     const dentro30Str = dentro30.toISOString().split('T')[0];
     
+    // Películas españolas
     const pelisRes = await fetch(
       `${BASEURL}discover/movie?api_key=${APIKEY}&language=es-ES&region=ES&with_original_language=es&primary_release_date.gte=${hoyStr}&primary_release_date.lte=${dentro30Str}&page=${page}`
     );
     
+    // Series españolas
     const seriesRes = await fetch(
       `${BASEURL}discover/tv?api_key=${APIKEY}&language=es-ES&with_origin_country=ES&first_air_date.gte=${hoyStr}&first_air_date.lte=${dentro30Str}&page=${page}`
     );
     
+    // Estrenos en plataformas
     const plataformasRes = await fetch(
       `${BASEURL}discover/movie?api_key=${APIKEY}&language=es-ES&watch_region=ES&with_watch_monetization_types=flatrate&primary_release_date.gte=${hoyStr}&primary_release_date.lte=${dentro30Str}&page=${page}`
     );
@@ -417,7 +441,8 @@ async function enriquecerConPlataformas(items) {
       if (data.results?.ES?.flatrate) {
         item.plataformas = data.results.ES.flatrate.map(p => ({
           logo: `https://image.tmdb.org/t/p/w45${p.logo_path}`,
-          nombre: p.provider_name
+          nombre: p.provider_name,
+          provider_id: p.provider_id
         }));
       }
     } catch (e) {
@@ -431,7 +456,7 @@ async function enriquecerConPlataformas(items) {
 }
 
 // ============================================
-// MOSTRAR RESULTADOS CON PLATAFORMAS (CORREGIDO)
+// MOSTRAR RESULTADOS CON PLATAFORMAS
 // ============================================
 async function mostrarResultados(items, contenedorId) {
   const cont = document.getElementById(contenedorId);
@@ -471,10 +496,10 @@ async function mostrarResultados(items, contenedorId) {
     if (item.plataformas && item.plataformas.length > 0) {
       plataformasHTML = `
         <div class="card-plataformas">
-          ${item.plataformas.slice(0, 3).map(p => 
-            `<img src="${p.logo}" title="${p.nombre}" style="width:25px !important; height:25px !important; border-radius:5px; object-fit:contain; background:rgba(255,255,255,0.1); padding:2px;" class="plataforma-mini">`
+          ${item.plataformas.slice(0, 4).map(p => 
+            `<img src="${p.logo}" title="${p.nombre}" class="plataforma-mini">`
           ).join('')}
-          ${item.plataformas.length > 3 ? `<span class="mas-plataformas">+${item.plataformas.length-3}</span>` : ''}
+          ${item.plataformas.length > 4 ? `<span class="mas-plataformas">+${item.plataformas.length-4}</span>` : ''}
         </div>
       `;
     }
@@ -523,10 +548,10 @@ async function agregarResultados(items, containerId) {
     if (item.plataformas && item.plataformas.length > 0) {
       plataformasHTML = `
         <div class="card-plataformas">
-          ${item.plataformas.slice(0, 3).map(p => 
-            `<img src="${p.logo}" title="${p.nombre}" style="width:25px !important; height:25px !important; border-radius:5px; object-fit:contain; background:rgba(255,255,255,0.1); padding:2px;" class="plataforma-mini">`
+          ${item.plataformas.slice(0, 4).map(p => 
+            `<img src="${p.logo}" title="${p.nombre}" class="plataforma-mini">`
           ).join('')}
-          ${item.plataformas.length > 3 ? `<span class="mas-plataformas">+${item.plataformas.length-3}</span>` : ''}
+          ${item.plataformas.length > 4 ? `<span class="mas-plataformas">+${item.plataformas.length-4}</span>` : ''}
         </div>
       `;
     }
@@ -544,7 +569,7 @@ async function agregarResultados(items, containerId) {
 }
 
 // ============================================
-// MOSTRAR AGENDA CON PLATAFORMAS (CORREGIDO)
+// MOSTRAR AGENDA CON PLATAFORMAS
 // ============================================
 function mostrarAgendaItems(items, reset = false) {
   const container = document.getElementById('agendaContainer');
@@ -558,7 +583,7 @@ function mostrarAgendaItems(items, reset = false) {
   `;
   
   if (items.length === 0) {
-    container.innerHTML += '<p style="text-align:center;padding:2rem;">No hay estrenos</p>';
+    container.innerHTML += '<p style="text-align:center;padding:2rem;">No hay estrenos con estos filtros</p>';
     return;
   }
   
@@ -630,10 +655,10 @@ function agruparPorFechaConPlataformas(items, container) {
       if (item.plataformas && item.plataformas.length > 0) {
         plataformasHTML = `
           <div class="plataformas-mini">
-            ${item.plataformas.slice(0, 4).map(p => 
-              `<img src="${p.logo}" title="${p.nombre}" style="width:25px !important; height:25px !important; border-radius:5px; object-fit:contain; background:rgba(255,255,255,0.1); padding:2px;">`
+            ${item.plataformas.slice(0, 5).map(p => 
+              `<img src="${p.logo}" title="${p.nombre}">`
             ).join('')}
-            ${item.plataformas.length > 4 ? `<span>+${item.plataformas.length-4}</span>` : ''}
+            ${item.plataformas.length > 5 ? `<span>+${item.plataformas.length-5}</span>` : ''}
           </div>
         `;
       }
@@ -646,19 +671,19 @@ function agruparPorFechaConPlataformas(items, container) {
           }
           <div style="flex:1;">
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <span class="tipo-badge ${item.tipo || ''}" style="padding:2px 8px; border-radius:12px; font-size:0.8rem; ${item.tipo === 'pelicula' ? 'background:#ffd700; color:black;' : 'background:#4ecdc4; color:black;'}">${tipoIcon}</span>
-              <span class="source-badge ${item.source || ''}" style="padding:2px 8px; border-radius:12px; font-size:0.7rem; ${item.source === 'tracktv' ? 'background:#ffd700; color:black;' : item.source === 'tmdb_espana' ? 'background:#ff6b6b; color:white;' : 'background:#4ecdc4; color:black;'}">${sourceIcon} ${sourceText}</span>
-              <h4 style="margin:0; font-size:1rem;">${titulo}</h4>
+              <span class="tipo-badge ${item.tipo || ''}">${tipoIcon}</span>
+              <span class="source-badge ${item.source || ''}">${sourceIcon} ${sourceText}</span>
+              <h4>${titulo}</h4>
             </div>
-            <p style="margin:5px 0; font-size:0.9rem; color:#ccc;">${item.overview ? item.overview.substring(0, 100) + '...' : 'Sin descripción'}</p>
+            <p>${item.overview ? item.overview.substring(0, 100) + '...' : 'Sin descripción'}</p>
             ${item.episode ? 
-              `<p style="margin:5px 0; font-size:0.8rem;"><small>T${item.episode.season} E${item.episode.number} - ${item.episode.title}</small></p>` : 
+              `<p><small>T${item.episode.season} E${item.episode.number} - ${item.episode.title}</small></p>` : 
               ''
             }
-            <p style="margin:5px 0; font-size:0.8rem;"><small>⭐ ${item.vote_average?.toFixed(1) || 'N/A'}</small></p>
+            <p><small>⭐ ${item.vote_average?.toFixed(1) || 'N/A'}</small></p>
             ${plataformasHTML}
           </div>
-          <button onclick='abrirModal(${JSON.stringify(item).replace(/'/g, "\\'")})' style="padding:8px 15px; background:var(--primary); border:none; border-radius:20px; color:white; cursor:pointer; font-weight:bold;">Ver</button>
+          <button onclick='abrirModal(${JSON.stringify(item).replace(/'/g, "\\'")})'>Ver</button>
         </div>
       `;
       
@@ -770,12 +795,6 @@ async function cargarPlataformas(id, tipo) {
         const img = document.createElement('img');
         img.src = `https://image.tmdb.org/t/p/w45${p.logo_path}`;
         img.title = p.provider_name;
-        img.style.width = '45px';
-        img.style.height = '45px';
-        img.style.objectFit = 'contain';
-        img.style.background = 'rgba(255,255,255,0.1)';
-        img.style.padding = '5px';
-        img.style.borderRadius = '8px';
         cont.appendChild(img);
       });
     } else cont.innerHTML = '<p>No disponible en España</p>';
@@ -941,10 +960,10 @@ async function cargarMiLista() {
     if (item.plataformas && item.plataformas.length > 0) {
       plataformasHTML = `
         <div class="card-plataformas">
-          ${item.plataformas.slice(0, 3).map(p => 
-            `<img src="${p.logo}" title="${p.nombre}" style="width:25px !important; height:25px !important; border-radius:5px; object-fit:contain; background:rgba(255,255,255,0.1); padding:2px;" class="plataforma-mini">`
+          ${item.plataformas.slice(0, 4).map(p => 
+            `<img src="${p.logo}" title="${p.nombre}" class="plataforma-mini">`
           ).join('')}
-          ${item.plataformas.length > 3 ? `<span class="mas-plataformas">+${item.plataformas.length-3}</span>` : ''}
+          ${item.plataformas.length > 4 ? `<span class="mas-plataformas">+${item.plataformas.length-4}</span>` : ''}
         </div>
       `;
     }
