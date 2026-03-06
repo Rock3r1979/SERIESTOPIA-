@@ -5,306 +5,244 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SERIESTOPIA - Tu guía de series y películas</title>
   <link rel="stylesheet" href="./style.css">
-  <style>
-    /* Estilos adicionales para la agenda */
-    .filtros-agenda {
-      grid-column: 1/-1;
-      margin-bottom: 2rem;
-      background: rgba(0,0,0,0.2);
-      padding: 1.5rem;
-      border-radius: 15px;
-    }
-    
-    .selector-fuente {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
-    }
-    
-    .fuente-btn {
-      padding: 1rem 2rem;
-      background: rgba(255,255,255,0.05);
-      border: 2px solid transparent;
-      color: white;
-      border-radius: 40px;
-      cursor: pointer;
-      transition: all 0.3s;
-      font-size: 1.1rem;
-      font-weight: bold;
-    }
-    
-    .fuente-btn:hover {
-      background: rgba(255,255,255,0.1);
-      border-color: var(--primary);
-    }
-    
-    .fuente-btn.active {
-      background: var(--primary);
-      border-color: var(--primary);
-      box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4);
-    }
-    
-    .filtros-secundarios {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 1rem;
-    }
-    
-    .filtros-secundarios select {
-      padding: 0.8rem 2rem;
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
-      color: white;
-      border-radius: 30px;
-      cursor: pointer;
-      font-size: 0.95rem;
-      min-width: 150px;
-    }
-    
-    #agendaStats {
-      font-size: 1.1rem;
-      padding: 1rem;
-      background: rgba(255,255,255,0.1);
-      border-radius: 30px;
-      margin-top: 1rem;
-      text-align: center;
-    }
-    
-    .toast {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      padding: 12px 24px;
-      border-radius: 8px;
-      color: white;
-      z-index: 3000;
-      animation: slideUp 0.3s ease;
-    }
-    
-    .toast-success { background: #4caf50; }
-    .toast-error { background: #f44336; }
-    .toast-info { background: #2196f3; }
-    
-    @keyframes slideUp {
-      from { transform: translateY(100px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-  </style>
 </head>
 <body>
 
-<header>
-  <h1>🎬 SERIESTOPIA</h1>
-  <nav>
-    <button onclick="mostrarSeccion('tendencias')">🔥 Tendencias</button>
-    <button onclick="mostrarSeccion('peliculas')">🎞 Películas</button>
-    <button onclick="mostrarSeccion('series')">📺 Series</button>
-    <button onclick="mostrarSeccion('agenda')">🗓 Agenda</button>
-    <button onclick="mostrarSeccion('miLista')">📌 Mi Lista</button>
-    <button onclick="mostrarSeccion('perfil')">👤 Perfil</button>
-    <button onclick="mostrarSeccion('buscar')">🔍 Buscar</button>
-    <button onclick="mostrarSeccion('contacto')">📞 Contacto</button>
-  </nav>
-</header>
+  <header>
+    <h1>SERIESTOPIA</h1>
+    <nav>
+      <button onclick="mostrarSeccion('tendencias')">Tendencias</button>
+      <button onclick="mostrarSeccion('peliculas')">Películas</button>
+      <button onclick="mostrarSeccion('series')">Series</button>
+      <button onclick="mostrarSeccion('agenda')">Agenda</button>
+      <button onclick="mostrarSeccion('miLista')">Mi Lista</button>
+      <button onclick="mostrarSeccion('perfil')">Perfil</button>
+      <button onclick="mostrarSeccion('buscar')">Buscar</button>
+      <button onclick="mostrarSeccion('contacto')">Contacto</button>
+    </nav>
+  </header>
 
-<!-- BUSCADOR -->
-<section id="buscar" class="seccion">
-  <div style="text-align:center; margin-bottom:2rem;">
-    <input type="text" id="searchInput" placeholder="Buscar película o serie..." style="padding:0.8rem 1.5rem; width:300px; max-width:80%; border-radius:30px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.1); color:white;">
-    <select id="tipo" style="padding:0.8rem 1.5rem; margin:0.5rem; border-radius:30px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.1); color:white;">
-      <option value="multi">Todo</option>
-      <option value="movie">Película</option>
-      <option value="tv">Serie</option>
-    </select>
-    <button onclick="buscar()" style="padding:0.8rem 2rem; background:var(--primary); border:none; border-radius:30px; color:white; cursor:pointer;">Buscar</button>
-  </div>
-  <div id="contenedorBuscar" class="grid"></div>
-</section>
-
-<!-- TENDENCIAS CON FILTROS -->
-<section id="tendencias" class="seccion">
-  <div class="filtros-seccion">
-    <button onclick="cambiarTipoTendencias('tv')" class="filtro-btn active" id="filtroTendenciasTv">📺 Series</button>
-    <button onclick="cambiarTipoTendencias('movie')" class="filtro-btn" id="filtroTendenciasMovie">🎬 Películas</button>
-  </div>
-  <div id="tendenciasContainer" class="grid"></div>
-</section>
-
-<!-- PELÍCULAS -->
-<section id="peliculas" class="seccion grid"></section>
-
-<!-- SERIES -->
-<section id="series" class="seccion grid"></section>
-
-<!-- AGENDA COMPLETA CON FILTROS MEJORADOS -->
-<section id="agenda" class="seccion">
-  <div class="filtros-agenda">
-    <div class="selector-fuente">
-      <button onclick="cambiarFuenteAgenda('espana')" class="fuente-btn active" id="fuenteEspana">🇪🇸 Agenda España</button>
-      <button onclick="cambiarFuenteAgenda('internacional')" class="fuente-btn" id="fuenteInternacional">🌍 Agenda Internacional</button>
-    </div>
-    
-    <div class="filtros-secundarios">
-      <select id="filtroFechaAgenda" onchange="aplicarFiltrosAgenda()">
-        <option value="month">Este mes</option>
-        <option value="week">Esta semana</option>
-        <option value="all">Completa (60 días)</option>
+  <!-- BUSCADOR -->
+  <section id="buscar" class="seccion">
+    <div style="text-align:center; margin-bottom:2rem;">
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Buscar película o serie..."
+        style="padding:0.8rem 1.5rem; width:300px; max-width:80%; border-radius:30px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.1); color:white;"
+      >
+      <select
+        id="tipo"
+        style="padding:0.8rem 1.5rem; margin:0.5rem; border-radius:30px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.1); color:white;"
+      >
+        <option value="multi">Todo</option>
+        <option value="movie">Película</option>
+        <option value="tv">Serie</option>
       </select>
-      
-      <select id="filtroPlataformaAgenda" onchange="aplicarFiltrosAgenda()">
-        <option value="all">Todas las plataformas</option>
-        <option value="netflix">Netflix</option>
-        <option value="disney+">Disney+</option>
-        <option value="hbomax">HBO Max</option>
-        <option value="primevideo">Amazon Prime</option>
-        <option value="movistar">Movistar+</option>
-        <option value="apple">Apple TV+</option>
-      </select>
+      <button
+        onclick="buscar()"
+        style="padding:0.8rem 2rem; background:var(--primary); border:none; border-radius:30px; color:white; cursor:pointer;"
+      >
+        Buscar
+      </button>
     </div>
-    
-    <div id="agendaStats"></div>
-  </div>
-  <div id="agendaContainer"></div>
-</section>
+    <div id="contenedorBuscar" class="grid"></div>
+  </section>
 
-<!-- MI LISTA -->
-<section id="miLista" class="seccion grid"></section>
+  <!-- TENDENCIAS -->
+  <section id="tendencias" class="seccion">
+    <div class="filtros-seccion">
+      <button onclick="cambiarTipoTendencias('tv')" class="filtro-btn active" id="filtroTendenciasTv">Series</button>
+      <button onclick="cambiarTipoTendencias('movie')" class="filtro-btn" id="filtroTendenciasMovie">Películas</button>
+    </div>
+    <div id="tendenciasContainer" class="grid"></div>
+  </section>
 
-<!-- PERFIL DE USUARIO -->
-<section id="perfil" class="seccion">
-  <div class="perfil-container">
-    <h2>👤 Mi Perfil</h2>
-    
-    <div class="perfil-card">
-      <div class="perfil-avatar">
-        <span class="avatar-icon">👤</span>
+  <!-- PELÍCULAS -->
+  <section id="peliculas" class="seccion grid"></section>
+
+  <!-- SERIES -->
+  <section id="series" class="seccion grid"></section>
+
+  <!-- AGENDA -->
+  <section id="agenda" class="seccion">
+    <div class="filtros-agenda">
+      <div class="selector-fuente">
+        <button onclick="cambiarFuenteAgenda('espana')" class="fuente-btn active" id="fuenteEspana">
+          Agenda España
+        </button>
+        <button onclick="cambiarFuenteAgenda('internacional')" class="fuente-btn" id="fuenteInternacional">
+          Agenda Internacional
+        </button>
       </div>
-      
-      <div class="perfil-info">
-        <h3>Tu alias actual</h3>
-        <p id="aliasActualDisplay" class="alias-display">No tienes alias configurado</p>
-        
-        <div class="perfil-acciones">
-          <input type="text" id="aliasInput" placeholder="Escribe tu alias (ej: pepito)" class="alias-input">
-          <button onclick="guardarAlias()" class="btn-perfil">💾 Guardar Alias</button>
-        </div>
-        
-        <div class="perfil-stats">
-          <h3>Estadísticas</h3>
-          <p>📌 Items en Mi Lista: <span id="statsMiLista">0</span></p>
-          <p>📅 Recordatorios: <span id="statsRecordatorios">0</span></p>
-          <p>⭐ Series puntuadas: <span id="statsPuntuadas">0</span></p>
-        </div>
-        
-        <div class="perfil-compartir">
-          <h3>Compartir</h3>
-          <p>Comparte este enlace con tu alias:</p>
-          <div class="compartir-box">
-            <input type="text" id="enlaceCompartir" readonly value="https://seriestopia.vercel.app/" class="enlace-input">
-            <button onclick="copiarEnlacePerfil()" class="btn-copiar">📋 Copiar</button>
-          </div>
-          <button onclick="compartirLista()" class="btn-compartir">🔗 Compartir Mi Lista</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
 
-<!-- CONTACTO -->
-<section id="contacto" class="seccion">
-  <div class="contacto-container">
-    <h2>📱 Conéctate con SERIESTOPIA</h2>
-    
-    <div class="redes-sociales">
-      <a href="https://twitter.com/seriestopia" target="_blank" class="red-social">
-        <span class="icono">𝕏</span>
-        <span>@seriestopia</span>
-      </a>
-      <a href="https://instagram.com/seriestopia" target="_blank" class="red-social">
-        <span class="icono">📷</span>
-        <span>@seriestopia</span>
-      </a>
-      <a href="https://tiktok.com/@seriestopia" target="_blank" class="red-social">
-        <span class="icono">🎵</span>
-        <span>@seriestopia</span>
-      </a>
-      <a href="https://discord.gg/seriestopia" target="_blank" class="red-social">
-        <span class="icono">💬</span>
-        <span>Comunidad Discord</span>
-      </a>
-      <a href="https://github.com/tu-usuario/seriestopia" target="_blank" class="red-social">
-        <span class="icono">🐙</span>
-        <span>GitHub</span>
-      </a>
-    </div>
-    
-    <div class="contacto-info">
-      <h3>📧 Contacto</h3>
-      <p>Email: <a href="mailto:info@seriestopia.vercel.app">info@seriestopia.vercel.app</a></p>
-      <p>🐦 Reporta bugs o sugiere mejoras en Twitter</p>
-      <p>⭐ Si te gusta el proyecto, ¡dale una estrella en GitHub!</p>
-    </div>
-    
-    <div class="newsletter">
-      <h3>📬 Newsletter</h3>
-      <p>Recibe los próximos estrenos en tu correo</p>
-      <div class="newsletter-form">
-        <input type="email" placeholder="Tu email" id="newsletterEmail">
-        <button onclick="suscribirNewsletter()">Suscribirse</button>
-      </div>
-    </div>
-    
-    <div class="colabora">
-      <h3>🤝 Colabora</h3>
-      <p>¿Eres desarrollador? ¡Ayúdanos a mejorar SERIESTOPIA!</p>
-      <a href="https://github.com/tu-usuario/seriestopia" target="_blank" class="boton-github">Contribuir en GitHub</a>
-    </div>
-  </div>
-</section>
-
-<!-- MODAL DETALLE -->
-<div id="modal" class="modal">
-  <div class="modal-content">
-    <span id="cerrar" class="close">&times;</span>
-    <div id="detalle"></div>
-    
-    <div id="temporadasContainer"></div>
-    
-    <div id="acciones">
-      <button id="agregarLista">➕ Agregar a Mi Lista</button>
-      <label>Puntuación:
-        <select id="puntuacion">
-          <option value="0">0</option>
-          <option value="1">1⭐</option>
-          <option value="2">2⭐</option>
-          <option value="3">3⭐</option>
-          <option value="4">4⭐</option>
-          <option value="5">5⭐</option>
+      <div class="filtros-secundarios">
+        <select id="filtroFechaAgenda" onchange="aplicarFiltrosAgenda()">
+          <option value="week">Esta semana</option>
+          <option value="month" selected>Este mes</option>
+          <option value="all">Próximos 60 días</option>
         </select>
-      </label>
-      <button id="recordar">📌 Recordarme</button>
-      <button id="verTrailer">🎥 Ver Trailer</button>
+
+        <select id="filtroPlataformaAgenda" onchange="aplicarFiltrosAgenda()">
+          <option value="all" selected>Todas las plataformas</option>
+          <option value="netflix">Netflix</option>
+          <option value="disneyplus">Disney+</option>
+          <option value="hbomax">HBO Max</option>
+          <option value="primevideo">Prime Video</option>
+          <option value="appletv">Apple TV+</option>
+          <option value="movistar">Movistar+</option>
+          <option value="filmin">Filmin</option>
+          <option value="skyshowtime">SkyShowtime</option>
+          <option value="rakutentv">Rakuten TV</option>
+        </select>
+      </div>
+
+      <div id="agendaStats"></div>
     </div>
-    
-    <div id="trailerContainer"></div>
-    <div id="plataformasContainer"></div>
-    <div id="estrellasSerie"></div>
+
+    <div id="agendaContainer"></div>
+  </section>
+
+  <!-- MI LISTA -->
+  <section id="miLista" class="seccion grid"></section>
+
+  <!-- PERFIL -->
+  <section id="perfil" class="seccion">
+    <div class="perfil-container">
+      <h2>Mi Perfil</h2>
+
+      <div class="perfil-card">
+        <div class="perfil-avatar">
+          <span class="avatar-icon">👤</span>
+        </div>
+
+        <div class="perfil-info">
+          <h3>Tu alias actual</h3>
+          <p id="aliasActualDisplay" class="alias-display">No tienes alias configurado</p>
+
+          <div class="perfil-acciones">
+            <input type="text" id="aliasInput" placeholder="Escribe tu alias (ej: pepito)" class="alias-input">
+            <button onclick="guardarAlias()" class="btn-perfil">Guardar Alias</button>
+          </div>
+
+          <div class="perfil-stats">
+            <h3>Estadísticas</h3>
+            <p>📌 Items en Mi Lista: <span id="statsMiLista">0</span></p>
+            <p>📅 Recordatorios: <span id="statsRecordatorios">0</span></p>
+            <p>⭐ Series puntuadas: <span id="statsPuntuadas">0</span></p>
+          </div>
+
+          <div class="perfil-compartir">
+            <h3>Compartir perfil</h3>
+            <p>Comparte este enlace con tu alias:</p>
+            <div class="compartir-box">
+              <input type="text" id="enlaceCompartir" readonly value="https://seriestopia.vercel.app/" class="enlace-input">
+              <button onclick="copiarEnlacePerfil()" class="btn-copiar">Copiar</button>
+            </div>
+            <button onclick="compartirLista()" class="btn-compartir">Compartir Mi Lista</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACTO -->
+  <section id="contacto" class="seccion">
+    <div class="contacto-container">
+      <h2>Conéctate con SERIESTOPIA</h2>
+
+      <div class="redes-sociales">
+        <a href="https://twitter.com/seriestopia" target="_blank" class="red-social">
+          <span class="icono">🐦</span>
+          <span>@seriestopia</span>
+        </a>
+
+        <a href="https://instagram.com/seriestopia" target="_blank" class="red-social">
+          <span class="icono">📸</span>
+          <span>@seriestopia</span>
+        </a>
+
+        <a href="https://tiktok.com/@seriestopia" target="_blank" class="red-social">
+          <span class="icono">🎵</span>
+          <span>@seriestopia</span>
+        </a>
+
+        <a href="https://discord.gg/seriestopia" target="_blank" class="red-social">
+          <span class="icono">💬</span>
+          <span>Comunidad Discord</span>
+        </a>
+
+        <a href="https://github.com/Rock3r1979/SERIESTOPIA-" target="_blank" class="red-social">
+          <span class="icono">💻</span>
+          <span>GitHub</span>
+        </a>
+      </div>
+
+      <div class="contacto-info">
+        <h3>Contacto</h3>
+        <p>Email: <a href="mailto:info@seriestopia.vercel.app">info@seriestopia.vercel.app</a></p>
+        <p>🐦 Reporta bugs o sugiere mejoras en Twitter</p>
+        <p>⭐ Si te gusta el proyecto, ¡dale una estrella en GitHub!</p>
+      </div>
+
+      <div class="newsletter">
+        <h3>Newsletter</h3>
+        <p>Recibe los próximos estrenos en tu correo</p>
+        <div class="newsletter-form">
+          <input type="email" placeholder="Tu email" id="newsletterEmail">
+          <button onclick="suscribirNewsletter()">Suscribirse</button>
+        </div>
+      </div>
+
+      <div class="colabora">
+        <h3>Colabora</h3>
+        <p>¿Eres desarrollador? Ayúdanos a mejorar SERIESTOPIA.</p>
+        <a href="https://github.com/Rock3r1979/SERIESTOPIA-" target="_blank" class="boton-github">Contribuir en GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODAL DETALLE -->
+  <div id="modal" class="modal">
+    <div class="modal-content" id="modal-content">
+      <span id="cerrar" class="close">&times;</span>
+      <div id="detalle"></div>
+      <div id="temporadasContainer"></div>
+
+      <div id="acciones">
+        <button id="agregarLista">Agregar a Mi Lista</button>
+
+        <label>
+          Puntuación
+          <select id="puntuacion">
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </label>
+
+        <button id="recordar">Recordarme</button>
+        <button id="verTrailer">Ver Trailer</button>
+      </div>
+
+      <div id="trailerContainer"></div>
+      <div id="plataformasContainer"></div>
+      <div id="estrellasSerie"></div>
+    </div>
   </div>
-</div>
 
-<!-- EXPORT / IMPORT -->
-<div id="exportImport">
-  <button onclick="exportarLista()">💾 Exportar Mi Lista</button>
-  <label for="importFile" style="margin-left: 0.5rem;">📂 Importar Mi Lista</label>
-  <input type="file" id="importFile" accept=".json" onchange="importarLista(event)">
-  <button onclick="exportarAlertas()">💌 Exportar Alertas</button>
-  <button onclick="compartirLista()">🔗 Compartir Mi Lista</button>
-</div>
+  <!-- EXPORT / IMPORT -->
+  <div id="exportImport">
+    <button onclick="exportarLista()">Exportar Mi Lista</button>
+    <label for="importFile" style="margin-left: 0.5rem;">Importar Mi Lista</label>
+    <input type="file" id="importFile" accept=".json" onchange="importarLista(event)">
+    <button onclick="exportarAlertas()">Exportar Alertas</button>
+    <button onclick="compartirLista()">Compartir Mi Lista</button>
+  </div>
 
-<script src="./script.js"></script>
+  <script src="./script.js"></script>
 </body>
 </html>
