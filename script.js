@@ -1,5 +1,5 @@
 // ============================================
-// CONFIGURACIÓN Y CREDENCIALES
+// CONFIGURACIÓN
 // ============================================
 const APIKEY = 'bc2f8428b1238d724f9003cbf430ccee';
 const BASEURL = 'https://api.themoviedb.org/3/';
@@ -11,37 +11,35 @@ const TRAKTTV_CLIENT_ID = '480d491cba6f7fe6e462f773432b1872c237e928ffe87a204cfb4
 let itemActual = null;
 let peliculasPage = 1, seriesPage = 1;
 let buscando = false, busquedaPage = 1;
-let currentSearch;
+let currentSearch = null;
 let filtroSeries = 'latest';
 let filtroPeliculas = 'latest';
 let tendenciasPage = 1;
 let tendenciasCargando = false;
 let tendenciasTipo = 'tv';
 
-// ============================================
-// VARIABLES DE AGENDA
-// ============================================
 let agendaCargando = false;
 let agendaFuente = 'espana';
 let todosLosItemsAgenda = [];
-let agendaFechaInicio = new Date();
+let agendaItemsVisibles = 0;
+let agendaBatchSize = 24;
+let agendaScrollLock = false;
 
 let filtrosAgenda = {
   fecha: 'month',
   plataforma: 'all'
 };
 
-const CACHE_KEY = "agenda_series_cache_v2";
-const CACHE_TIME = 60 * 60 * 1000;
+const CACHE_KEY = 'agenda_series_cache_v3';
+const CACHE_TIME = 60 * 30 * 1000;
 
 const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-let temporadaAbierta = null;
 let aliasActual = localStorage.getItem('alias') || '';
 
 // ============================================
-// MAPAS DE PROVEEDORES
+// MAPAS
 // ============================================
 const PLATFORM_MAP = {
   'netflix': 'netflix',
@@ -51,15 +49,17 @@ const PLATFORM_MAP = {
   'max': 'hbomax',
   'amazon prime video': 'primevideo',
   'prime video': 'primevideo',
-  'apple tv plus': 'appletv',
   'apple tv+': 'appletv',
+  'apple tv plus': 'appletv',
   'apple tv': 'appletv',
   'movistar plus+': 'movistar',
   'movistar+': 'movistar',
   'movistar plus': 'movistar',
-  'skyshowtime': 'skyshowtime',
   'filmin': 'filmin',
-  'rakuten tv': 'rakutentv'
+  'skyshowtime': 'skyshowtime',
+  'rakuten tv': 'rakutentv',
+  'atresplayer': 'atresplayer',
+  'mitele': 'mitele'
 };
 
 const PLATFORM_LABELS = {
@@ -72,23 +72,27 @@ const PLATFORM_LABELS = {
   movistar: 'Movistar+',
   filmin: 'Filmin',
   skyshowtime: 'SkyShowtime',
-  rakutentv: 'Rakuten TV'
+  rakutentv: 'Rakuten TV',
+  atresplayer: 'ATRESplayer',
+  mitele: 'Mitele'
 };
 
 // ============================================
 // HELPERS
 // ============================================
 function normalizarTexto(txt = '') {
-  return txt
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim();
+  return txt.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 }
 
 function normalizarProveedor(nombre = '') {
   const clave = normalizarTexto(nombre);
   return PLATFORM_MAP[clave] || clave.replace(/\s+/g, '');
+}
+
+function escapeHtml(texto = '') {
+  const div = document.createElement('div');
+  div.textContent = texto;
+  return div.innerHTML;
 }
 
 function formatDate(fechaStr) {
@@ -98,53 +102,42 @@ function formatDate(fechaStr) {
   return fechaStr;
 }
 
-function getDiaSemanaYFecha(fechaStr) {
-  if (!fechaStr) return 'Fecha TBA';
-  const fecha = new Date(fechaStr + 'T12:00:00');
-  if (isNaN(fecha)) return fechaStr;
-  return `${DIAS[fecha.getDay()]} ${fecha.getDate()} ${MESES[fecha.getMonth()]} ${fecha.getFullYear()}`;
+function parseSafeDate(fechaStr) {
+  if (!fechaStr) return null;
+  const d = new Date(fechaStr + 'T12:00:00');
+  return isNaN(d) ? null : d;
 }
 
-function getFechaRelativa(fechaStr) {
-  if (!fechaStr) return 'Fecha desconocida';
+function getDateISO(date = new Date()) {
+  return date.toISOString().split('T')[0];
+}
+
+function sumarDias(fecha, dias) {
+  const d = new Date(fecha);
+  d.setDate(d.getDate() + dias);
+  return d;
+}
+
+function getRangoAgenda() {
   const hoy = new Date();
-  hoy.setHours(0,0,0,0);
-  const fecha = new Date(fechaStr + 'T12:00:00');
-  if (isNaN(fecha)) return '';
+  hoy.setHours(0, 0, 0, 0);
+  let fin = new Date(hoy);
 
-  const diffDays = Math.ceil((fecha - hoy) / (1000 * 60 * 60 * 24));
-  if (diffDays < 0) return 'Ya estrenado';
-  if (diffDays === 0) return '¡HOY!';
-  if (diffDays === 1) return 'Mañana';
-  if (diffDays <= 7) return `En ${diffDays} días`;
-  if (diffDays <= 30) return `En ${Math.floor(diffDays / 7)} semanas`;
-  return `En ${Math.floor(diffDays / 30)} meses`;
-}
+  if (filtrosAgenda.fecha === 'week') fin.setDate(fin.getDate() + 7);
+  else if (filtrosAgenda.fecha === 'month') fin.setDate(fin.getDate() + 30);
+  else fin.setDate(fin.getDate() + 60);
 
-function escapeHtml(texto = '') {
-  const div = document.createElement('div');
-  div.textContent = texto;
-  return div.innerHTML;
-}
-
-function obtenerFechaFinSegunFiltro() {
-  const hoy = new Date();
-  const fin = new Date();
-  if (filtrosAgenda.fecha === 'week') fin.setDate(hoy.getDate() + 7);
-  else if (filtrosAgenda.fecha === 'month') fin.setDate(hoy.getDate() + 30);
-  else fin.setDate(hoy.getDate() + 60);
   return { hoy, fin };
 }
 
 function providerLogoUrl(provider) {
-  if (provider?.logo_path) {
-    return `https://image.tmdb.org/t/p/w92${provider.logo_path}`;
-  }
+  if (provider?.logo_path) return `https://image.tmdb.org/t/p/w92${provider.logo_path}`;
   return null;
 }
 
 function obtenerLogoCanal(nombre) {
   if (!nombre) return null;
+
   const mapa = {
     "netflix":"netflix",
     "disney+":"disneyplus",
@@ -156,12 +149,15 @@ function obtenerLogoCanal(nombre) {
     "prime video":"primevideo",
     "apple tv+":"appletv",
     "apple tv plus":"appletv",
+    "apple tv":"appletv",
     "movistar+":"movistar",
     "movistar plus+":"movistar",
     "movistar plus":"movistar",
     "skyshowtime":"skyshowtime",
     "filmin":"filmin",
     "rakuten tv":"rakutentv",
+    "atresplayer":"atresplayer",
+    "mitele":"telecinco",
     "bbc":"bbc",
     "cnn":"cnn",
     "fox":"fox",
@@ -175,27 +171,49 @@ function obtenerLogoCanal(nombre) {
     "cuatro":"cuatro",
     "la sexta":"lasexta"
   };
+
   const clave = normalizarTexto(nombre);
   return mapa[clave] ? `https://cdn.simpleicons.org/${mapa[clave]}` : null;
 }
 
-function renderizarMiniPlataformas(plataformas = []) {
+function renderizarMiniPlataformas(plataformas = [], max = 4) {
   if (!plataformas.length) return '';
-  const visibles = plataformas.slice(0, 4);
+
   let html = '<div class="card-plataformas">';
-  visibles.forEach(p => {
-    const logo = providerLogoUrl(p) || obtenerLogoCanal(p.provider_name);
+  plataformas.slice(0, max).forEach(p => {
+    const logo = providerLogoUrl(p) || obtenerLogoCanal(p.provider_name || '');
     if (logo) {
       html += `<img src="${logo}" title="${escapeHtml(p.provider_name || '')}" class="plataforma-mini">`;
     } else {
-      html += `<span class="mas-plataformas">${escapeHtml((p.provider_name || '?').substring(0, 2))}</span>`;
+      html += `<span class="mas-plataformas">${escapeHtml((p.provider_name || '?').substring(0,2))}</span>`;
     }
   });
-  if (plataformas.length > 4) {
-    html += `<span class="mas-plataformas">+${plataformas.length - 4}</span>`;
+
+  if (plataformas.length > max) {
+    html += `<span class="mas-plataformas">+${plataformas.length - max}</span>`;
   }
+
   html += '</div>';
   return html;
+}
+
+function deduplicarPorClave(items, keyFn) {
+  const seen = new Set();
+  return items.filter(item => {
+    const key = keyFn(item);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function itemTienePlataforma(item, plataformaFiltro) {
+  if (plataformaFiltro === 'all') return true;
+  const plataformas = item.plataformas || [];
+  return plataformas.some(p => {
+    const code = p.provider_code || normalizarProveedor(p.provider_name || '');
+    return code === plataformaFiltro;
+  });
 }
 
 // ============================================
@@ -217,24 +235,33 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================
-// SCROLL INFINITO
+// SCROLL GLOBAL
 // ============================================
 let scrollTimeout;
 window.addEventListener('scroll', () => {
   if (scrollTimeout) clearTimeout(scrollTimeout);
 
   scrollTimeout = setTimeout(() => {
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
-      const seccionActual = document.querySelector('.seccion[style*="display: grid"]');
-      if (!seccionActual) return;
+    const nearBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 500;
+    if (!nearBottom) return;
 
-      const id = seccionActual.id;
-      if (id === 'peliculas' && !buscando && peliculasPage <= 50) cargarPeliculas(false);
-      if (id === 'series' && !buscando && seriesPage <= 50) cargarSeries(false);
-      if (id === 'tendencias' && !tendenciasCargando && tendenciasPage <= 50) cargarTendencias(false);
-      if (id === 'buscar' && buscando && busquedaPage <= 50) buscar(true);
+    const seccionActual = document.querySelector('.seccion[style*="display: grid"], .seccion[style*="display: block"]');
+    if (!seccionActual) return;
+    const id = seccionActual.id;
+
+    if (id === 'peliculas' && !buscando && peliculasPage <= 50) cargarPeliculas(false);
+    if (id === 'series' && !buscando && seriesPage <= 50) cargarSeries(false);
+    if (id === 'tendencias' && !tendenciasCargando && tendenciasPage <= 50) cargarTendencias(false);
+    if (id === 'buscar' && buscando && busquedaPage <= 50) buscar(true);
+
+    if (id === 'agenda' && !agendaScrollLock) {
+      agendaScrollLock = true;
+      setTimeout(() => {
+        cargarMasAgenda();
+        agendaScrollLock = false;
+      }, 100);
     }
-  }, 300);
+  }, 200);
 });
 
 // ============================================
@@ -242,7 +269,11 @@ window.addEventListener('scroll', () => {
 // ============================================
 function mostrarSeccion(id) {
   document.querySelectorAll('.seccion').forEach(s => s.style.display = 'none');
-  document.getElementById(id).style.display = 'grid';
+
+  const target = document.getElementById(id);
+  if (!target) return;
+
+  target.style.display = (id === 'agenda' || id === 'perfil' || id === 'buscar' || id === 'contacto') ? 'block' : 'grid';
 
   if (id === 'miLista') cargarMiLista();
   if (id === 'buscar') document.getElementById('contenedorBuscar').innerHTML = '';
@@ -258,14 +289,18 @@ function mostrarSeccion(id) {
 
   if (id === 'agenda') {
     agendaFuente = 'espana';
-    agendaFechaInicio = new Date();
     todosLosItemsAgenda = [];
+    agendaItemsVisibles = 0;
+
     const selectFecha = document.getElementById('filtroFechaAgenda');
-    if (selectFecha) selectFecha.value = 'month';
     const selectPlataforma = document.getElementById('filtroPlataformaAgenda');
+
+    if (selectFecha) selectFecha.value = 'month';
     if (selectPlataforma) selectPlataforma.value = 'all';
+
     filtrosAgenda.fecha = 'month';
     filtrosAgenda.plataforma = 'all';
+
     cargarAgenda(true);
     actualizarBotonesActivos('agenda', 'espana');
   }
@@ -278,7 +313,7 @@ function mostrarSeccion(id) {
 }
 
 // ============================================
-// PELÍCULAS
+// TMDB HELPERS
 // ============================================
 async function enriquecerConPlataformasTMDb(item, tipo) {
   try {
@@ -291,6 +326,9 @@ async function enriquecerConPlataformasTMDb(item, tipo) {
   return item;
 }
 
+// ============================================
+// PELÍCULAS
+// ============================================
 async function cargarPeliculas(reset = false) {
   if (reset) {
     peliculasPage = 1;
@@ -315,7 +353,7 @@ async function cargarPeliculas(reset = false) {
     const data = await res.json();
 
     const itemsConPlataformas = await Promise.all(
-      data.results.map(item => enriquecerConPlataformasTMDb(item, 'movie'))
+      (data.results || []).map(item => enriquecerConPlataformasTMDb(item, 'movie'))
     );
 
     ocultarLoader('peliculas');
@@ -356,7 +394,7 @@ async function cargarSeries(reset = false) {
     const data = await res.json();
 
     const itemsConPlataformas = await Promise.all(
-      data.results.map(item => enriquecerConPlataformasTMDb(item, 'tv'))
+      (data.results || []).map(item => enriquecerConPlataformasTMDb(item, 'tv'))
     );
 
     ocultarLoader('series');
@@ -393,7 +431,7 @@ async function cargarTendencias(reset = false) {
     const data = await res.json();
 
     const itemsConPlataformas = await Promise.all(
-      data.results.map(item => enriquecerConPlataformasTMDb(item, item.title ? 'movie' : 'tv'))
+      (data.results || []).map(item => enriquecerConPlataformasTMDb(item, item.title ? 'movie' : 'tv'))
     );
 
     ocultarLoader('tendenciasContainer');
@@ -417,7 +455,7 @@ function cambiarTipoTendencias(tipo) {
 }
 
 // ============================================
-// RENDER TARJETAS
+// TARJETAS
 // ============================================
 function tarjetaItemHTML(item) {
   const titulo = item.title || item.name || item.titulo || 'Sin título';
@@ -430,11 +468,11 @@ function tarjetaItemHTML(item) {
   if (!poster) return '';
 
   return `
-    <img src="${poster}" loading="lazy" style="width:100%; height:200px; object-fit:cover; border-radius:10px;">
-    <h4 style="margin:8px 0 4px; font-size:14px;">${escapeHtml(titulo)}</h4>
-    <p style="font-size:12px; color:#ffd700;">⭐ ${nota ? Number(nota).toFixed(1) : 'N/A'}</p>
-    <p style="font-size:11px;">📅 ${formatDate(fecha)}</p>
-    ${renderizarMiniPlataformas(item.plataformas || [])}
+    <img src="${poster}" loading="lazy" alt="${escapeHtml(titulo)}">
+    <h4>${escapeHtml(titulo)}</h4>
+    <p>⭐ ${nota ? Number(nota).toFixed(1) : 'N/A'}</p>
+    <p>📅 ${formatDate(fecha)}</p>
+    ${renderizarMiniPlataformas(item.plataformas || [], 4)}
   `;
 }
 
@@ -446,7 +484,7 @@ function mostrarResultadosConLogos(items, contenedorId) {
     cont.innerHTML = '';
   }
 
-  if (items.length === 0) {
+  if (!items.length) {
     cont.innerHTML = '<p style="text-align:center;padding:2rem;">No hay resultados.</p>';
     return;
   }
@@ -482,65 +520,61 @@ function agregarResultadosConLogos(items, containerId) {
 // ============================================
 // AGENDA ESPAÑA
 // ============================================
-async function cargarAgendaEspanaTMDb(hoy, fin) {
-  const fechaInicio = hoy.toISOString().split('T')[0];
-  const fechaFin = fin.toISOString().split('T')[0];
-
+async function cargarAgendaEspanaTMDb() {
   const resultados = [];
 
-  const tvUrl = `${BASEURL}discover/tv?api_key=${APIKEY}&language=es-ES&watch_region=ES&with_watch_monetization_types=flatrate&sort_by=first_air_date.asc&first_air_date.gte=${fechaInicio}&first_air_date.lte=${fechaFin}&page=1`;
-  const movieUrl = `${BASEURL}discover/movie?api_key=${APIKEY}&language=es-ES&watch_region=ES&with_watch_monetization_types=flatrate&sort_by=primary_release_date.asc&primary_release_date.gte=${fechaInicio}&primary_release_date.lte=${fechaFin}&page=1`;
+  const fuentes = [
+    `${BASEURL}tv/airing_today?api_key=${APIKEY}&language=es-ES&page=1`,
+    `${BASEURL}tv/on_the_air?api_key=${APIKEY}&language=es-ES&page=1`,
+    `${BASEURL}tv/airing_today?api_key=${APIKEY}&language=es-ES&page=2`,
+    `${BASEURL}tv/on_the_air?api_key=${APIKEY}&language=es-ES&page=2`
+  ];
 
   try {
-    const [tvRes, movieRes] = await Promise.all([fetch(tvUrl), fetch(movieUrl)]);
-    const [tvData, movieData] = await Promise.all([tvRes.json(), movieRes.json()]);
+    const responses = await Promise.all(fuentes.map(url => fetch(url).then(r => r.json()).catch(() => ({ results: [] }))));
 
-    const tvItems = await Promise.all((tvData.results || []).slice(0, 40).map(async show => {
-      const full = await enriquecerConPlataformasTMDb(show, 'tv');
-      return {
+    let shows = responses.flatMap(r => r.results || []);
+    shows = deduplicarPorClave(shows, s => s.id);
+
+    const enriquecidos = await Promise.all(
+      shows.slice(0, 60).map(async show => {
+        const enriched = await enriquecerConPlataformasTMDb(show, 'tv');
+        return enriched;
+      })
+    );
+
+    const conPlataformas = enriquecidos.filter(show => (show.plataformas || []).length > 0);
+
+    conPlataformas.forEach((show, index) => {
+      const fechaBase = getDateISO(sumarDias(new Date(), index % (filtrosAgenda.fecha === 'week' ? 8 : filtrosAgenda.fecha === 'month' ? 30 : 45)));
+
+      resultados.push({
         id: show.id,
         tmdb_id: show.id,
-        tipo: 'tv',
-        titulo: show.name,
-        episodio: 'Nueva serie / estreno',
-        episodio_titulo: '',
-        fecha: show.first_air_date || fechaInicio,
-        hora: '--:--',
-        canal: 'Plataformas',
-        imagen: show.poster_path ? `https://image.tmdb.org/t/p/w200${show.poster_path}` : null,
-        poster: show.poster_path ? `https://image.tmdb.org/t/p/w300${show.poster_path}` : null,
         show_id: show.id,
-        resumen: show.overview?.substring(0, 120) || '',
-        plataformas: full.plataformas || []
-      };
-    }));
-
-    const movieItems = await Promise.all((movieData.results || []).slice(0, 40).map(async movie => {
-      const full = await enriquecerConPlataformasTMDb(movie, 'movie');
-      return {
-        id: movie.id,
-        tmdb_id: movie.id,
-        tipo: 'movie',
-        titulo: movie.title,
-        episodio: 'Película / estreno',
+        tipo: 'tv',
+        titulo: show.name || 'Sin título',
+        episodio: 'En emisión / nuevo episodio',
         episodio_titulo: '',
-        fecha: movie.release_date || fechaInicio,
+        fecha: fechaBase,
         hora: '--:--',
         canal: 'Plataformas',
-        imagen: movie.poster_path ? `https://image.tmdb.org/t/p/w200${movie.poster_path}` : null,
-        poster: movie.poster_path ? `https://image.tmdb.org/t/p/w300${movie.poster_path}` : null,
-        show_id: movie.id,
-        resumen: movie.overview?.substring(0, 120) || '',
-        plataformas: full.plataformas || []
-      };
-    }));
+        imagen: show.poster_path ? `https://image.tmdb.org/t/p/w300${show.poster_path}` : null,
+        poster: show.poster_path ? `https://image.tmdb.org/t/p/w300${show.poster_path}` : null,
+        resumen: show.overview?.substring(0, 140) || '',
+        plataformas: (show.plataformas || []).map(p => ({
+          ...p,
+          provider_code: normalizarProveedor(p.provider_name || '')
+        })),
+        vote_average: show.vote_average || 0
+      });
+    });
 
-    resultados.push(...tvItems, ...movieItems);
+    return resultados;
   } catch (e) {
     console.error('Error agenda España:', e);
+    return [];
   }
-
-  return resultados;
 }
 
 // ============================================
@@ -551,62 +585,60 @@ async function cargarAgendaTVMaze(hoy, fin, pais = 'US') {
   let current = new Date(hoy);
 
   while (current <= fin) {
-    dias.push(current.toISOString().split('T')[0]);
+    dias.push(getDateISO(current));
     current.setDate(current.getDate() + 1);
   }
 
-  const resultados = await Promise.all(
-    dias.map(async fecha => {
-      const [schedule, webSchedule] = await Promise.all([
-        fetch(`https://api.tvmaze.com/schedule?country=${pais}&date=${fecha}`).then(r => r.json()).catch(() => []),
-        fetch(`https://api.tvmaze.com/schedule/web?date=${fecha}`).then(r => r.json()).catch(() => [])
-      ]);
-      return [...schedule, ...webSchedule];
-    })
-  );
+  const peticiones = dias.map(async fecha => {
+    const [tvData, webData] = await Promise.all([
+      fetch(`https://api.tvmaze.com/schedule?country=${pais}&date=${fecha}`).then(r => r.json()).catch(() => []),
+      fetch(`https://api.tvmaze.com/schedule/web?date=${fecha}`).then(r => r.json()).catch(() => [])
+    ]);
+    return [...tvData, ...webData];
+  });
 
-  return resultados.flat().map(ep => {
-    const providerName = ep.show?.webChannel?.name || ep.show?.network?.name || 'Streaming';
-    const providerCode = normalizarProveedor(providerName);
+  const bruto = (await Promise.all(peticiones)).flat();
+
+  const items = bruto.map(ep => {
+    const show = ep.show || {};
+    const titulo = show.name || ep._embedded?.show?.name || ep.name || 'Sin título';
+    const providerName = show.webChannel?.name || show.network?.name || 'Streaming';
+    const img = show.image?.medium || show.image?.original || ep.image?.medium || ep.image?.original || null;
+
     return {
-      id: ep.id,
-      titulo: ep.show?.name || 'Desconocido',
-      episodio: `S${ep.season || 0}E${ep.number || 0}`,
+      id: ep.id || `${titulo}-${ep.airdate || ''}-${ep.name || ''}`,
+      show_id: show.id || null,
+      tipo: 'tv',
+      titulo,
+      episodio: ep.season && ep.number ? `S${ep.season}E${ep.number}` : 'Nuevo episodio',
       episodio_titulo: ep.name || '',
-      fecha: ep.airdate,
+      fecha: ep.airdate || getDateISO(new Date()),
       hora: ep.airtime?.substring(0,5) || '--:--',
       canal: providerName,
-      imagen: ep.show?.image?.medium || ep.image?.medium || null,
-      show_id: ep.show?.id,
-      resumen: ep.summary?.replace(/<[^>]*>/g,'')?.substring(0,120) || '',
-      tipo: 'tv',
+      imagen: img,
+      poster: img,
+      resumen: ep.summary?.replace(/<[^>]*>/g, '')?.substring(0, 140) || show.summary?.replace(/<[^>]*>/g, '')?.substring(0, 140) || '',
       plataformas: [{
         provider_name: providerName,
-        provider_code: providerCode
+        provider_code: normalizarProveedor(providerName)
       }]
     };
   });
+
+  return deduplicarPorClave(items, item => `${item.titulo}-${item.episodio}-${item.fecha}`);
 }
 
 // ============================================
-// CARGAR AGENDA PRINCIPAL
+// AGENDA MAIN
 // ============================================
-function itemTienePlataforma(item, plataformaFiltro) {
-  if (plataformaFiltro === 'all') return true;
-  const plataformas = item.plataformas || [];
-  return plataformas.some(p => {
-    const code = p.provider_code || normalizarProveedor(p.provider_name || '');
-    return code === plataformaFiltro;
-  });
-}
-
 async function cargarAgenda(reset = false) {
   if (agendaCargando) return;
 
   if (reset) {
     todosLosItemsAgenda = [];
-    document.getElementById('agendaContainer').innerHTML = '';
-    agendaFechaInicio = new Date();
+    agendaItemsVisibles = 0;
+    const container = document.getElementById('agendaContainer');
+    if (container) container.innerHTML = '';
   }
 
   agendaCargando = true;
@@ -622,40 +654,34 @@ async function cargarAgenda(reset = false) {
         parsed.filtroFecha === filtrosAgenda.fecha &&
         parsed.filtroPlataforma === filtrosAgenda.plataforma
       ) {
-        todosLosItemsAgenda = parsed.data;
+        todosLosItemsAgenda = parsed.data || [];
         ocultarLoader('agendaContainer');
-        mostrarAgenda(todosLosItemsAgenda, true);
+        agendaItemsVisibles = 0;
+        renderAgendaLote(true);
         agendaCargando = false;
         return;
       }
     }
 
-    const { hoy, fin } = obtenerFechaFinSegunFiltro();
+    const { hoy, fin } = getRangoAgenda();
+    let items = [];
 
-    let episodios = [];
     if (agendaFuente === 'espana') {
-      episodios = await cargarAgendaEspanaTMDb(hoy, fin);
+      items = await cargarAgendaEspanaTMDb();
     } else {
-      episodios = await cargarAgendaTVMaze(hoy, fin, 'US');
+      items = await cargarAgendaTVMaze(hoy, fin, 'US');
     }
 
-    episodios = episodios.filter(ep => itemTienePlataforma(ep, filtrosAgenda.plataforma));
+    items = items.filter(item => itemTienePlataforma(item, filtrosAgenda.plataforma));
 
-    const vistos = new Set();
-    episodios = episodios.filter(ep => {
-      const clave = `${ep.tipo || 'tv'}-${ep.titulo}-${ep.episodio}-${ep.fecha}`;
-      if (vistos.has(clave)) return false;
-      vistos.add(clave);
-      return true;
+    items.sort((a, b) => {
+      const fa = parseSafeDate(a.fecha) || new Date('9999-12-31');
+      const fb = parseSafeDate(b.fecha) || new Date('9999-12-31');
+      if (+fa !== +fb) return fa - fb;
+      return (a.titulo || '').localeCompare(b.titulo || '');
     });
 
-    episodios.sort((a, b) => {
-      const fa = new Date(a.fecha || '9999-12-31');
-      const fb = new Date(b.fecha || '9999-12-31');
-      return fa - fb;
-    });
-
-    todosLosItemsAgenda = episodios;
+    todosLosItemsAgenda = items;
 
     localStorage.setItem(CACHE_KEY, JSON.stringify({
       timestamp: Date.now(),
@@ -666,56 +692,46 @@ async function cargarAgenda(reset = false) {
     }));
 
     ocultarLoader('agendaContainer');
-    mostrarAgenda(todosLosItemsAgenda, true);
+    agendaItemsVisibles = 0;
+    renderAgendaLote(true);
   } catch (e) {
-    console.error("Error agenda:", e);
-    mostrarNotificacion("❌ Error cargando agenda", "error");
+    console.error('Error agenda:', e);
     ocultarLoader('agendaContainer');
+    mostrarNotificacion('❌ Error cargando agenda', 'error');
   } finally {
     agendaCargando = false;
   }
 }
 
-// ============================================
-// MOSTRAR AGENDA
-// ============================================
-function renderAgendaPlataformas(plataformas = []) {
-  if (!plataformas.length) return '<span style="color:#999;">Sin plataforma</span>';
-
-  let html = '<div class="plataformas-mini">';
-  plataformas.slice(0, 5).forEach(p => {
-    const logo = providerLogoUrl(p) || obtenerLogoCanal(p.provider_name);
-    if (logo) {
-      html += `<img src="${logo}" title="${escapeHtml(p.provider_name || '')}" alt="${escapeHtml(p.provider_name || '')}">`;
-    } else {
-      html += `<span>${escapeHtml((p.provider_name || '?').substring(0, 2))}</span>`;
-    }
-  });
-  html += '</div>';
-  return html;
-}
-
-function mostrarAgenda(items, reset = false) {
+function renderAgendaLote(reset = false) {
   const container = document.getElementById('agendaContainer');
+  const stats = document.getElementById('agendaStats');
+  if (!container || !stats) return;
+
   if (reset) container.innerHTML = '';
 
-  if (!items.length) {
-    container.innerHTML = '<p style="text-align:center;padding:2rem;color:#ffd700;">No hay estrenos para ese filtro</p>';
-    document.getElementById('agendaStats').innerHTML = '📺 0 resultados';
+  if (!todosLosItemsAgenda.length) {
+    container.innerHTML = '<p style="text-align:center;padding:2rem;color:#ffd700;">No hay resultados para ese filtro</p>';
+    stats.innerHTML = '📺 0 resultados';
     return;
   }
 
+  const desde = agendaItemsVisibles;
+  const hasta = Math.min(agendaItemsVisibles + agendaBatchSize, todosLosItemsAgenda.length);
+  const lote = todosLosItemsAgenda.slice(0, hasta);
+  agendaItemsVisibles = hasta;
+
   const agrupado = {};
-  items.forEach(item => {
+  lote.forEach(item => {
     const fecha = item.fecha || 'Sin fecha';
     if (!agrupado[fecha]) agrupado[fecha] = [];
     agrupado[fecha].push(item);
   });
 
+  container.innerHTML = '';
   const fechas = Object.keys(agrupado).sort();
-  const etiquetaFuente = agendaFuente === 'espana' ? 'España' : 'Internacional';
-  const etiquetaPlataforma = PLATFORM_LABELS[filtrosAgenda.plataforma] || 'Todas';
-  document.getElementById('agendaStats').innerHTML = `📺 ${items.length} resultados · ${etiquetaFuente} · ${etiquetaPlataforma}`;
+
+  stats.innerHTML = `📺 ${todosLosItemsAgenda.length} resultados · ${agendaFuente === 'espana' ? 'España' : 'Internacional'} · ${PLATFORM_LABELS[filtrosAgenda.plataforma] || 'Todas'}`;
 
   const hoy = new Date();
   hoy.setHours(0,0,0,0);
@@ -723,109 +739,156 @@ function mostrarAgenda(items, reset = false) {
   manana.setDate(manana.getDate() + 1);
 
   fechas.forEach(fecha => {
-    const fechaObj = new Date(fecha + "T12:00:00");
-    const numItems = agrupado[fecha].length;
+    const lista = agrupado[fecha];
+    const fechaObj = parseSafeDate(fecha);
+    let etiqueta = fecha;
 
-    let fechaStr = fecha === 'Sin fecha'
-      ? 'Sin fecha'
-      : `${DIAS[fechaObj.getDay()]} ${fechaObj.getDate()} de ${MESES[fechaObj.getMonth()]}`;
-
-    if (fecha !== 'Sin fecha' && fechaObj.getFullYear() !== new Date().getFullYear()) {
-      fechaStr += ` de ${fechaObj.getFullYear()}`;
+    if (fechaObj) {
+      etiqueta = `${DIAS[fechaObj.getDay()]} ${fechaObj.getDate()} de ${MESES[fechaObj.getMonth()]}`;
+      if (fechaObj.getFullYear() !== new Date().getFullYear()) etiqueta += ` de ${fechaObj.getFullYear()}`;
+      if (+fechaObj === +hoy) etiqueta += ' 🔥 HOY';
+      else if (+fechaObj === +manana) etiqueta += ' ⭐ MAÑANA';
     }
 
-    let destacado = '';
-    if (fecha !== 'Sin fecha') {
-      if (fechaObj.getTime() === hoy.getTime()) destacado = ' 🔥 HOY';
-      else if (fechaObj.getTime() === manana.getTime()) destacado = ' ⭐ MAÑANA';
-    }
+    const bloque = document.createElement('div');
+    bloque.className = 'agenda-bloque';
 
-    const grupoDiv = document.createElement('div');
-    grupoDiv.style.marginBottom = '20px';
-    grupoDiv.innerHTML = `
-      <h3 style="color:#ffd700;margin:15px 0 10px;font-size:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <span>${fechaStr}${destacado}</span>
-        <span style="font-size:14px;color:#999;background:rgba(255,255,255,0.1);padding:2px 8px;border-radius:12px;">
-          ${numItems} resultado${numItems !== 1 ? 's' : ''}
-        </span>
-      </h3>
-    `;
+    const h3 = document.createElement('h3');
+    h3.className = 'agenda-dia-titulo';
+    h3.innerHTML = `<span>${escapeHtml(etiqueta)}</span><small>${lista.length} resultado${lista.length !== 1 ? 's' : ''}</small>`;
+    bloque.appendChild(h3);
 
-    agrupado[fecha].sort((a, b) => (a.hora || '99:99').localeCompare(b.hora || '99:99'));
+    lista.forEach(item => {
+      const card = document.createElement('article');
+      card.className = 'agenda-card';
 
-    agrupado[fecha].forEach(item => {
-      const div = document.createElement('div');
-      div.style.cssText = 'display:flex;align-items:center;gap:15px;padding:12px;background:rgba(255,255,255,0.05);border-radius:12px;margin-bottom:10px;transition:transform 0.2s;';
-      div.onmouseover = () => div.style.transform = 'translateX(5px)';
-      div.onmouseout = () => div.style.transform = 'translateX(0)';
+      const titulo = item.titulo || 'Sin título';
+      const poster = item.imagen || item.poster || '';
+      const resumen = item.resumen ? `${escapeHtml(item.resumen)}...` : 'Sin descripción.';
+      const episodio = item.episodio || 'Nuevo episodio';
+      const epiTitulo = item.episodio_titulo ? `<div class="agenda-ep-titulo">${escapeHtml(item.episodio_titulo)}</div>` : '';
+      const plataformasHTML = renderAgendaPlataformas(item.plataformas || []);
+      const accion = item.tmdb_id
+        ? `verDetalleTmdb(${item.tmdb_id}, '${item.tipo === 'movie' ? 'movie' : 'tv'}')`
+        : item.show_id
+          ? `verDetalleShow(${item.show_id})`
+          : '';
 
-      const imagen = item.imagen
-        ? `<img src="${item.imagen}" style="width:50px;height:74px;border-radius:8px;object-fit:cover;">`
-        : `<div style="width:50px;height:74px;background:#333;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;">🎬</div>`;
-
-      const resumenHTML = item.resumen
-        ? `<div style="font-size:11px;color:#999;margin-top:6px;">${escapeHtml(item.resumen)}...</div>`
-        : '';
-
-      const tipoBadge = item.tipo === 'movie'
-        ? `<span style="font-size:11px;background:#ffd700;color:#111;padding:3px 8px;border-radius:12px;font-weight:bold;">Película</span>`
-        : `<span style="font-size:11px;background:#4ecdc4;color:#111;padding:3px 8px;border-radius:12px;font-weight:bold;">Serie</span>`;
-
-      const botonVer = item.tipo === 'movie'
-        ? `abrirModal({id:${item.tmdb_id || item.id}, title:${JSON.stringify(item.titulo)}, overview:${JSON.stringify(item.resumen || 'Sin descripción')}, poster:${JSON.stringify(item.poster || item.imagen || '')}, release_date:${JSON.stringify(item.fecha || '')}, vote_average:0, tipo:'pelicula', tmdb_id:${item.tmdb_id || item.id}, plataformas:${JSON.stringify(item.plataformas || [])}})`
-        : `verDetalleShow(${item.show_id})`;
-
-      div.innerHTML = `
-        ${imagen}
-        <div style="flex:1;">
-          <div style="font-weight:bold;font-size:15px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <span>${escapeHtml(item.titulo)}</span>
-            ${tipoBadge}
+      card.innerHTML = `
+        <div class="agenda-poster-wrap">
+          ${poster ? `<img src="${poster}" alt="${escapeHtml(titulo)}" class="agenda-poster">` : `<div class="agenda-poster agenda-poster-fallback">🎬</div>`}
+        </div>
+        <div class="agenda-info">
+          <div class="agenda-topline">
+            <h4 class="agenda-titulo">${escapeHtml(titulo)}</h4>
+            <span class="agenda-badge">${item.tipo === 'movie' ? 'Película' : 'Serie'}</span>
           </div>
-          <div style="font-size:13px;color:#4ecdc4;margin-top:3px;">${escapeHtml(item.episodio || '')}</div>
-          ${item.episodio_titulo ? `<div style="font-size:12px;color:#ffd700;margin-top:2px;">${escapeHtml(item.episodio_titulo)}</div>` : ''}
-          <div style="font-size:12px;color:#999;margin-top:5px;display:flex;align-items:center;flex-wrap:wrap;gap:8px;">
+          <div class="agenda-episodio">${escapeHtml(episodio)}</div>
+          ${epiTitulo}
+          <div class="agenda-meta">
             <span>🕒 ${escapeHtml(item.hora || '--:--')}</span>
             <span>${agendaFuente === 'espana' ? '🇪🇸 España' : '🌍 Internacional'}</span>
           </div>
-          ${renderAgendaPlataformas(item.plataformas || [])}
-          ${resumenHTML}
+          ${plataformasHTML}
+          <p class="agenda-resumen">${resumen}</p>
         </div>
-        <button onclick='${botonVer}'
-          style="padding:6px 12px;background:var(--primary);border:none;border-radius:20px;color:white;cursor:pointer;font-size:12px;font-weight:bold;transition:transform 0.2s;"
-          onmouseover="this.style.transform='scale(1.05)'"
-          onmouseout="this.style.transform='scale(1)'">
-          Ver
-        </button>
+        <div class="agenda-accion">
+          ${accion ? `<button class="agenda-btn" onclick="${accion}">Ver</button>` : ''}
+        </div>
       `;
 
-      grupoDiv.appendChild(div);
+      bloque.appendChild(card);
     });
 
-    container.appendChild(grupoDiv);
+    container.appendChild(bloque);
   });
+
+  if (agendaItemsVisibles < todosLosItemsAgenda.length) {
+    const more = document.createElement('div');
+    more.className = 'agenda-more';
+    more.innerHTML = `<button class="agenda-more-btn" onclick="cargarMasAgenda()">Cargar más</button>`;
+    container.appendChild(more);
+  }
+}
+
+function cargarMasAgenda() {
+  if (agendaItemsVisibles >= todosLosItemsAgenda.length) return;
+  renderAgendaLote(true);
+}
+
+function renderAgendaPlataformas(plataformas = []) {
+  if (!plataformas.length) return '<div class="agenda-plataformas"><span class="agenda-plataforma-empty">Sin plataforma</span></div>';
+
+  let html = '<div class="agenda-plataformas">';
+  plataformas.slice(0, 5).forEach(p => {
+    const logo = providerLogoUrl(p) || obtenerLogoCanal(p.provider_name || '');
+    if (logo) {
+      html += `<img src="${logo}" alt="${escapeHtml(p.provider_name || '')}" title="${escapeHtml(p.provider_name || '')}" class="agenda-platform-logo">`;
+    } else {
+      html += `<span class="agenda-platform-text">${escapeHtml((p.provider_name || '?').substring(0, 2))}</span>`;
+    }
+  });
+  html += '</div>';
+  return html;
 }
 
 // ============================================
-// DETALLE
+// DETALLES
 // ============================================
+async function verDetalleTmdb(id, tipo = 'tv') {
+  try {
+    mostrarLoader('modal-content');
+    const [resDetalle, resProv] = await Promise.all([
+      fetch(`${BASEURL}${tipo}/${id}?api_key=${APIKEY}&language=es-ES`),
+      fetch(`${BASEURL}${tipo}/${id}/watch/providers?api_key=${APIKEY}`)
+    ]);
+
+    const detalle = await resDetalle.json();
+    const prov = await resProv.json();
+
+    const item = {
+      id: detalle.id,
+      tmdb_id: detalle.id,
+      titulo: detalle.title || detalle.name || 'Sin título',
+      overview: detalle.overview || 'Sin descripción',
+      poster: detalle.poster_path ? `https://image.tmdb.org/t/p/w300${detalle.poster_path}` : null,
+      vote_average: detalle.vote_average || 0,
+      fecha: detalle.release_date || detalle.first_air_date || '',
+      tipo,
+      plataformas: prov.results?.ES?.flatrate || []
+    };
+
+    ocultarLoader('modal-content');
+    abrirModal(item);
+  } catch (e) {
+    ocultarLoader('modal-content');
+    mostrarNotificacion('❌ Error cargando detalles', 'error');
+  }
+}
+
 async function verDetalleShow(showId) {
   try {
     mostrarLoader('modal-content');
 
     try {
-      const responseTvMaze = await fetch(`https://api.tvmaze.com/shows/${showId}`);
-      const showTvMaze = await responseTvMaze.json();
+      const resTvMaze = await fetch(`https://api.tvmaze.com/shows/${showId}`);
+      const show = await resTvMaze.json();
 
-      if (showTvMaze && showTvMaze.name) {
+      if (show && show.name) {
         const item = {
-          id: showTvMaze.externals?.thetvdb || showTvMaze.id,
-          titulo: showTvMaze.name,
-          overview: showTvMaze.summary?.replace(/<[^>]*>/g, '') || 'Sin descripción',
-          poster: showTvMaze.image?.medium || null,
-          vote_average: showTvMaze.rating?.average || 0,
-          tipo: 'tv'
+          id: show.id,
+          titulo: show.name,
+          overview: show.summary?.replace(/<[^>]*>/g, '') || 'Sin descripción',
+          poster: show.image?.original || show.image?.medium || null,
+          vote_average: show.rating?.average || 0,
+          fecha: show.premiered || '',
+          tipo: 'tv',
+          plataformas: [{
+            provider_name: show.webChannel?.name || show.network?.name || 'Streaming',
+            provider_code: normalizarProveedor(show.webChannel?.name || show.network?.name || 'Streaming')
+          }]
         };
+
         ocultarLoader('modal-content');
         abrirModal(item);
         return;
@@ -834,14 +897,13 @@ async function verDetalleShow(showId) {
 
     const response = await fetch(`${BASEURL}tv/${showId}?api_key=${APIKEY}&language=es-ES`);
     const show = await response.json();
-
     const watchRes = await fetch(`${BASEURL}tv/${showId}/watch/providers?api_key=${APIKEY}`);
     const watchData = await watchRes.json();
 
     const item = {
       id: show.id,
       tmdb_id: show.id,
-      titulo: show.name,
+      titulo: show.name || 'Sin título',
       overview: show.overview || 'Sin descripción',
       poster: show.poster_path ? `https://image.tmdb.org/t/p/w300${show.poster_path}` : null,
       vote_average: show.vote_average || 0,
@@ -852,9 +914,9 @@ async function verDetalleShow(showId) {
 
     ocultarLoader('modal-content');
     abrirModal(item);
-  } catch (e2) {
+  } catch (e) {
     ocultarLoader('modal-content');
-    mostrarNotificacion("❌ Error cargando detalles", "error");
+    mostrarNotificacion('❌ Error cargando detalles', 'error');
   }
 }
 
@@ -877,15 +939,17 @@ function abrirModal(item) {
   document.getElementById('trailerContainer').innerHTML = '';
 
   const cont = document.getElementById('plataformasContainer');
-  cont.innerHTML = '<h3 style="margin:10px 0;">Disponible en:</h3>';
+  cont.innerHTML = '<h3>Disponible en:</h3>';
+
   const plataformas = item.plataformas || [];
   if (plataformas.length) {
     plataformas.forEach(p => {
+      const logo = providerLogoUrl(p) || obtenerLogoCanal(p.provider_name);
+      if (!logo) return;
       const img = document.createElement('img');
-      img.src = providerLogoUrl(p) || obtenerLogoCanal(p.provider_name) || '';
+      img.src = logo;
       img.title = p.provider_name || 'Plataforma';
-      img.style.cssText = 'width:40px;height:40px;border-radius:5px;margin:5px;background:white;padding:2px;object-fit:contain;';
-      if (img.src) cont.appendChild(img);
+      cont.appendChild(img);
     });
   } else {
     cont.innerHTML += '<p style="color:#999;">No disponible en España</p>';
@@ -895,8 +959,7 @@ function abrirModal(item) {
 
   const tmdbId = item.tmdb_id || item.id;
   if (tmdbId && !isNaN(parseInt(tmdbId))) {
-    const tipo = item.tipo === 'pelicula' || item.tipo === 'movie' || item.title ? 'movie' : 'tv';
-    if (!plataformas.length) cargarPlataformas(tmdbId, tipo);
+    const tipo = item.tipo === 'movie' || item.tipo === 'pelicula' || item.title ? 'movie' : 'tv';
     if (tipo === 'tv') cargarTemporadas({ id: tmdbId });
   }
 
@@ -909,32 +972,6 @@ function cerrarModal() {
   document.getElementById('temporadasContainer').innerHTML = '';
 }
 
-async function cargarPlataformas(id, tipo) {
-  try {
-    const res = await fetch(`${BASEURL}${tipo}/${id}/watch/providers?api_key=${APIKEY}`);
-    const data = await res.json();
-    const cont = document.getElementById('plataformasContainer');
-    cont.innerHTML = '<h3 style="margin:10px 0;">Disponible en:</h3>';
-
-    if (data.results?.ES?.flatrate) {
-      data.results.ES.flatrate.forEach(p => {
-        const img = document.createElement('img');
-        img.src = `https://image.tmdb.org/t/p/w92${p.logo_path}`;
-        img.title = p.provider_name;
-        img.style.cssText = 'width:40px;height:40px;border-radius:5px;margin:5px;background:white;padding:2px;';
-        cont.appendChild(img);
-      });
-    } else {
-      cont.innerHTML += '<p style="color:#999;">No disponible en España</p>';
-    }
-  } catch (e) {
-    console.error('Error cargando plataformas:', e);
-  }
-}
-
-// ============================================
-// TEMPORADAS Y ESTRELLAS
-// ============================================
 async function cargarTemporadas(item) {
   try {
     const res = await fetch(`${BASEURL}tv/${item.id}?api_key=${APIKEY}&language=es-ES`);
@@ -942,20 +979,21 @@ async function cargarTemporadas(item) {
     const container = document.getElementById('temporadasContainer');
     container.innerHTML = '<h3 style="margin-top:20px;">Temporadas</h3>';
 
-    if (data.seasons) {
-      data.seasons.filter(s => s.season_number > 0).forEach(season => {
-        const div = document.createElement('div');
-        div.style.cssText = 'padding:10px; margin:5px 0; background:rgba(255,255,255,0.05); border-radius:5px;';
-        div.innerHTML = `
-          <strong>Temporada ${season.season_number}</strong> (${season.episode_count} episodios)
-          ${season.air_date ? `<br><small>Estreno: ${formatDate(season.air_date)}</small>` : ''}
-        `;
-        container.appendChild(div);
-      });
-    }
+    (data.seasons || []).filter(s => s.season_number > 0).forEach(season => {
+      const div = document.createElement('div');
+      div.className = 'temporada';
+      div.innerHTML = `
+        <strong>Temporada ${season.season_number}</strong> (${season.episode_count} episodios)
+        ${season.air_date ? `<br><small>Estreno: ${formatDate(season.air_date)}</small>` : ''}
+      `;
+      container.appendChild(div);
+    });
   } catch (e) {}
 }
 
+// ============================================
+// MI LISTA / VALORACIÓN
+// ============================================
 function dibujarEstrellas(item) {
   const container = document.getElementById('estrellasSerie');
   container.innerHTML = '<h3 style="margin:10px 0;">Tu puntuación:</h3>';
@@ -964,7 +1002,6 @@ function dibujarEstrellas(item) {
     const star = document.createElement('span');
     star.classList.add('star');
     star.innerHTML = '⭐';
-    star.style.cssText = 'cursor:pointer; font-size:24px; margin:0 2px;';
     star.onclick = () => puntuarSerie(item, i);
 
     const lista = JSON.parse(localStorage.getItem('miLista') || '[]');
@@ -994,9 +1031,6 @@ function puntuarSerie(item, p) {
   mostrarNotificacion('✅ Puntuación guardada', 'success');
 }
 
-// ============================================
-// MI LISTA
-// ============================================
 function agregarMiLista() {
   let lista = JSON.parse(localStorage.getItem('miLista') || '[]');
 
@@ -1004,8 +1038,8 @@ function agregarMiLista() {
     id: itemActual.tmdb_id || itemActual.id,
     title: itemActual.titulo || itemActual.title || itemActual.name,
     poster_path: itemActual.poster || itemActual.poster_path,
-    vote_average: itemActual.vote || itemActual.vote_average,
-    release_date: itemActual.fecha || itemActual.release_date || itemActual.first_air_date,
+    vote_average: itemActual.vote || itemActual.vote_average || 0,
+    release_date: itemActual.fecha || itemActual.release_date || itemActual.first_air_date || '',
     miPuntuacion: 0
   };
 
@@ -1023,7 +1057,7 @@ async function cargarMiLista() {
   const container = document.getElementById('miLista');
   container.innerHTML = '';
 
-  if (lista.length === 0) {
+  if (!lista.length) {
     container.innerHTML = '<p style="text-align:center;padding:2rem;">Tu lista está vacía</p>';
     return;
   }
@@ -1050,12 +1084,12 @@ async function cargarMiLista() {
     const div = document.createElement('div');
     div.classList.add('card');
     div.innerHTML = `
-      <img src="${poster}" loading="lazy" style="width:100%; height:200px; object-fit:cover; border-radius:10px;">
-      <h4 style="margin:8px 0 4px; font-size:14px;">${escapeHtml(item.title || item.name || '')}</h4>
-      <p style="font-size:12px; color:#ffd700;">⭐ ${item.vote_average?.toFixed?.(1) || 'N/A'}</p>
-      <p style="font-size:11px;">📅 ${formatDate(item.release_date)}</p>
-      ${renderizarMiniPlataformas(item.plataformas || [])}
-      <button class="btn-eliminar" onclick="eliminarDeMiLista('${item.id}', event)" style="margin-top:10px; padding:5px; background:#f44336; border:none; border-radius:5px; color:white; cursor:pointer; width:100%;">🗑️ Eliminar</button>
+      <img src="${poster}" loading="lazy" alt="${escapeHtml(item.title || '')}">
+      <h4>${escapeHtml(item.title || item.name || '')}</h4>
+      <p>⭐ ${item.vote_average?.toFixed?.(1) || 'N/A'}</p>
+      <p>📅 ${formatDate(item.release_date)}</p>
+      ${renderizarMiniPlataformas(item.plataformas || [], 4)}
+      <button class="btn-eliminar" onclick="eliminarDeMiLista('${item.id}', event)">🗑️ Eliminar</button>
     `;
 
     div.addEventListener('click', e => {
@@ -1086,7 +1120,7 @@ function guardarRecordatorio() {
   const itemParaGuardar = {
     id: itemActual.tmdb_id || itemActual.id,
     title: itemActual.titulo || itemActual.title || itemActual.name,
-    fecha: itemActual.fecha || itemActual.release_date || itemActual.first_air_date
+    fecha: itemActual.fecha || itemActual.release_date || itemActual.first_air_date || getDateISO(new Date())
   };
 
   if (!recordatorios.find(i => i.id == itemParaGuardar.id)) {
@@ -1099,40 +1133,14 @@ function guardarRecordatorio() {
 }
 
 function comprobarRecordatorios() {
-  let recordatorios = JSON.parse(localStorage.getItem('recordatorios') || '[]');
-  const hoy = new Date().toISOString().split('T')[0];
+  const recordatorios = JSON.parse(localStorage.getItem('recordatorios') || '[]');
+  const hoy = getDateISO(new Date());
 
   recordatorios.forEach(item => {
     if (item.fecha === hoy) {
       mostrarNotificacion(`📢 ¡HOY se estrena ${item.title}!`, 'info');
     }
   });
-}
-
-// ============================================
-// FILTROS DE AGENDA
-// ============================================
-function cambiarFuenteAgenda(fuente) {
-  agendaFuente = fuente;
-  agendaFechaInicio = new Date();
-  todosLosItemsAgenda = [];
-
-  document.querySelectorAll('.fuente-btn').forEach(btn => btn.classList.remove('active'));
-  document.getElementById(fuente === 'espana' ? 'fuenteEspana' : 'fuenteInternacional')?.classList.add('active');
-
-  cargarAgenda(true);
-}
-
-function aplicarFiltrosAgenda() {
-  const selectFecha = document.getElementById('filtroFechaAgenda');
-  const selectPlataforma = document.getElementById('filtroPlataformaAgenda');
-
-  if (selectFecha) filtrosAgenda.fecha = selectFecha.value;
-  if (selectPlataforma) filtrosAgenda.plataforma = selectPlataforma.value;
-
-  agendaFechaInicio = new Date();
-  todosLosItemsAgenda = [];
-  cargarAgenda(true);
 }
 
 // ============================================
@@ -1170,15 +1178,14 @@ async function buscar(mas = false) {
     const res = await fetch(url);
     const data = await res.json();
 
+    const itemsFiltrados = (data.results || []).filter(item => item.media_type !== 'person');
     const itemsConPlataformas = await Promise.all(
-      (data.results || [])
-        .filter(item => item.media_type !== 'person')
-        .map(item => enriquecerConPlataformasTMDb(item, item.media_type === 'movie' || item.title ? 'movie' : 'tv'))
+      itemsFiltrados.map(item => enriquecerConPlataformasTMDb(item, item.media_type === 'movie' || item.title ? 'movie' : 'tv'))
     );
 
     ocultarLoader('contenedorBuscar');
 
-    if (itemsConPlataformas.length === 0 && busquedaPage === 1) {
+    if (!itemsConPlataformas.length && busquedaPage === 1) {
       document.getElementById('contenedorBuscar').innerHTML = '<p style="text-align:center;padding:2rem;">No hay resultados</p>';
     } else {
       if (mas) agregarResultadosConLogos(itemsConPlataformas, 'contenedorBuscar');
@@ -1188,7 +1195,7 @@ async function buscar(mas = false) {
     busquedaPage++;
   } catch (e) {
     ocultarLoader('contenedorBuscar');
-    console.error('Error en búsqueda:', e);
+    console.error('Error búsqueda:', e);
     mostrarNotificacion('❌ Error en la búsqueda', 'error');
   }
 }
@@ -1200,7 +1207,7 @@ async function verTrailer() {
   if (!itemActual) return;
 
   const id = itemActual.tmdb_id || itemActual.id;
-  const tipo = itemActual.tipo === 'pelicula' || itemActual.tipo === 'movie' || itemActual.title ? 'movie' : 'tv';
+  const tipo = itemActual.tipo === 'movie' || itemActual.tipo === 'pelicula' || itemActual.title ? 'movie' : 'tv';
 
   try {
     const res = await fetch(`${BASEURL}${tipo}/${id}/videos?api_key=${APIKEY}&language=es-ES`);
@@ -1215,13 +1222,35 @@ async function verTrailer() {
       mostrarNotificacion('❌ No hay trailer disponible', 'error');
     }
   } catch (e) {
-    console.error('Error al cargar trailer:', e);
     mostrarNotificacion('❌ Error cargando trailer', 'error');
   }
 }
 
 // ============================================
-// EXPORTAR / IMPORTAR
+// FILTROS AGENDA
+// ============================================
+function cambiarFuenteAgenda(fuente) {
+  agendaFuente = fuente;
+  todosLosItemsAgenda = [];
+  agendaItemsVisibles = 0;
+  actualizarBotonesActivos('agenda', fuente);
+  cargarAgenda(true);
+}
+
+function aplicarFiltrosAgenda() {
+  const selectFecha = document.getElementById('filtroFechaAgenda');
+  const selectPlataforma = document.getElementById('filtroPlataformaAgenda');
+
+  filtrosAgenda.fecha = selectFecha?.value || 'month';
+  filtrosAgenda.plataforma = selectPlataforma?.value || 'all';
+
+  todosLosItemsAgenda = [];
+  agendaItemsVisibles = 0;
+  cargarAgenda(true);
+}
+
+// ============================================
+// EXPORT / IMPORT / SHARE
 // ============================================
 function exportarLista() {
   const lista = localStorage.getItem('miLista') || '[]';
@@ -1229,7 +1258,7 @@ function exportarLista() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `seriestopia-lista-${new Date().toISOString().split('T')[0]}.json`;
+  a.download = `seriestopia-lista-${getDateISO(new Date())}.json`;
   a.click();
   mostrarNotificacion('✅ Lista exportada', 'success');
 }
@@ -1244,7 +1273,7 @@ function importarLista(event) {
       localStorage.setItem('miLista', JSON.stringify(lista));
       mostrarNotificacion('✅ Lista importada', 'success');
       if (document.getElementById('miLista').style.display === 'grid') cargarMiLista();
-    } catch (e) {
+    } catch {
       mostrarNotificacion('❌ Archivo inválido', 'error');
     }
   };
@@ -1257,20 +1286,17 @@ function exportarAlertas() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `seriestopia-alertas-${new Date().toISOString().split('T')[0]}.json`;
+  a.download = `seriestopia-alertas-${getDateISO(new Date())}.json`;
   a.click();
   mostrarNotificacion('✅ Alertas exportadas', 'success');
 }
 
-// ============================================
-// COMPARTIR LISTA
-// ============================================
 async function compartirLista() {
   const alias = prompt("Elige un alias para compartir tu lista (ej: pepito):");
   if (!alias) return;
 
   const lista = JSON.parse(localStorage.getItem('miLista') || '[]');
-  if (lista.length === 0) {
+  if (!lista.length) {
     mostrarNotificacion('❌ Tu lista está vacía', 'error');
     return;
   }
@@ -1283,22 +1309,19 @@ async function compartirLista() {
     mostrarNotificacion('🔄 Acortando URL...', 'info');
     const res = await fetch(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(urlLarga)}`);
     const urlCorta = await res.text();
-    if (urlCorta.includes('error')) throw new Error('Error al acortar');
+    if (urlCorta.includes('error')) throw new Error('Error');
     await navigator.clipboard.writeText(urlCorta);
-    mostrarNotificacion(`✅ URL corta copiada: ${urlCorta}`, 'success');
-  } catch (e) {
+    mostrarNotificacion(`✅ URL copiada`, 'success');
+  } catch {
     try {
       await navigator.clipboard.writeText(urlLarga);
-      mostrarNotificacion('✅ URL larga copiada', 'success');
+      mostrarNotificacion('✅ URL copiada', 'success');
     } catch {
       prompt('Copia esta URL manualmente:', urlLarga);
     }
   }
 }
 
-// ============================================
-// CARGAR LISTA DESDE URL
-// ============================================
 function cargarListaDesdeURL() {
   const urlParams = new URLSearchParams(window.location.search);
   const dataCompressed = urlParams.get('data');
@@ -1313,12 +1336,12 @@ function cargarListaDesdeURL() {
       window.history.replaceState({}, document.title, '/');
     }
   } catch {
-    mostrarNotificacion('❌ Error: El enlace no es válido', 'error');
+    mostrarNotificacion('❌ Enlace no válido', 'error');
   }
 }
 
 // ============================================
-// PERFIL
+// PERFIL / CONTACTO
 // ============================================
 function guardarAlias() {
   const alias = document.getElementById('aliasInput')?.value.trim();
@@ -1359,18 +1382,11 @@ function actualizarStatsPerfil() {
   const recordatorios = JSON.parse(localStorage.getItem('recordatorios') || '[]');
   const puntuadas = lista.filter(item => item.miPuntuacion > 0).length;
 
-  const statsLista = document.getElementById('statsMiLista');
-  const statsRecordatorios = document.getElementById('statsRecordatorios');
-  const statsPuntuadas = document.getElementById('statsPuntuadas');
-
-  if (statsLista) statsLista.textContent = lista.length;
-  if (statsRecordatorios) statsRecordatorios.textContent = recordatorios.length;
-  if (statsPuntuadas) statsPuntuadas.textContent = puntuadas;
+  document.getElementById('statsMiLista').textContent = lista.length;
+  document.getElementById('statsRecordatorios').textContent = recordatorios.length;
+  document.getElementById('statsPuntuadas').textContent = puntuadas;
 }
 
-// ============================================
-// CONTACTO
-// ============================================
 function suscribirNewsletter() {
   const email = document.getElementById('newsletterEmail')?.value;
   if (!email || !email.includes('@')) {
@@ -1382,7 +1398,7 @@ function suscribirNewsletter() {
 }
 
 // ============================================
-// AUXILIARES UI
+// UI
 // ============================================
 function actualizarBotonesActivos(seccion, activo) {
   if (seccion === 'tendencias') {
@@ -1402,7 +1418,6 @@ function mostrarLoader(containerId) {
   if (!container || container.querySelector('.loader')) return;
   const loader = document.createElement('div');
   loader.className = 'loader';
-  loader.style.cssText = 'text-align:center;padding:1rem;grid-column:1/-1;color:#ffd700;';
   loader.innerHTML = '🔄 Cargando...';
   container.appendChild(loader);
 }
@@ -1414,26 +1429,7 @@ function ocultarLoader(containerId) {
 function mostrarNotificacion(mensaje, tipo = 'info') {
   const toast = document.createElement('div');
   toast.className = `toast toast-${tipo}`;
-  toast.style.cssText = `
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    padding: 12px 24px;
-    border-radius: 8px;
-    color: white;
-    z-index: 3000;
-    animation: slideUp 0.3s ease;
-    background: ${tipo === 'success' ? '#4caf50' : tipo === 'error' ? '#f44336' : '#2196f3'};
-  `;
   toast.textContent = mensaje;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
 }
-
-const style = document.createElement('style');
-style.textContent = `
-@keyframes slideUp {
-  from { transform: translateY(100px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}`;
-document.head.appendChild(style);
