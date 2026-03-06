@@ -18,7 +18,7 @@ let tendenciasPage = 1;
 let tendenciasCargando = false;
 let tendenciasTipo = 'tv';
 
-// VARIABLES DE AGENDA (TVMAZE)
+// VARIABLES DE AGENDA
 let agendaCargando = false;
 let agendaFuente = 'espana';
 let todosLosItemsAgenda = [];
@@ -31,40 +31,51 @@ let filtrosAgenda = {
 const CACHE_KEY = "agenda_series_cache";
 const CACHE_TIME = 60 * 60 * 1000; // 1 hora
 
-// LOGOS CON SIMPLE ICONS
-const LOGOS_CANALES = {
-  // Plataformas streaming
-  'Netflix': 'https://cdn.simpleicons.org/netflix',
-  'Disney+': 'https://cdn.simpleicons.org/disneyplus',
-  'HBO Max': 'https://cdn.simpleicons.org/hbomax',
-  'Amazon Prime Video': 'https://cdn.simpleicons.org/primevideo',
-  'Apple TV': 'https://cdn.simpleicons.org/appletv',
-  'Apple TV+': 'https://cdn.simpleicons.org/appletv',
-  'SkyShowtime': 'https://cdn.simpleicons.org/skyshowtime',
-  'Filmin': 'https://cdn.simpleicons.org/filmin',
-  'Movistar+': 'https://cdn.simpleicons.org/movistar',
-  'Movistar Plus+': 'https://cdn.simpleicons.org/movistar',
-  
-  // Canales españoles
-  'Antena 3': 'https://cdn.simpleicons.org/antena3',
-  'La 1': 'https://cdn.simpleicons.org/rtve',
-  'TVE': 'https://cdn.simpleicons.org/rtve',
-  'Telecinco': 'https://cdn.simpleicons.org/telecinco',
-  'Cuatro': 'https://cdn.simpleicons.org/cuatro',
-  'La Sexta': 'https://cdn.simpleicons.org/lasexta',
-  
-  // Canales internacionales
-  'FOX': 'https://cdn.simpleicons.org/fox',
-  'CNN': 'https://cdn.simpleicons.org/cnn',
-  'BBC': 'https://cdn.simpleicons.org/bbc',
-  'BBC One': 'https://cdn.simpleicons.org/bbc',
-  'NBC': 'https://cdn.simpleicons.org/nbc',
-  'ABC': 'https://cdn.simpleicons.org/abc',
-  'CBS': 'https://cdn.simpleicons.org/cbs'
-};
+// DIAS Y MESES EN ESPAÑOL
+const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 let temporadaAbierta = null;
 let aliasActual = localStorage.getItem('alias') || '';
+
+// ============================================
+// FUNCIÓN PARA OBTENER LOGOS CON SIMPLE ICONS
+// ============================================
+function obtenerLogoCanal(nombre) {
+  if (!nombre) return null;
+  const mapa = {
+    // Plataformas streaming
+    "netflix":"netflix",
+    "disney+":"disneyplus",
+    "hbo":"hbo",
+    "hbo max":"hbomax",
+    "amazon prime video":"primevideo",
+    "prime video":"primevideo",
+    "apple tv+":"appletv",
+    "movistar+":"movistar",
+    "movistar plus+":"movistar",
+    "skyShowtime":"skyshowtime",
+    "filmin":"filmin",
+    
+    // Canales españoles
+    "antena 3":"antena3",
+    "telecinco":"telecinco",
+    "la 1":"rtve",
+    "tve":"rtve",
+    "cuatro":"cuatro",
+    "la sexta":"lasexta",
+    
+    // Canales internacionales
+    "bbc":"bbc",
+    "cnn":"cnn",
+    "fox":"fox",
+    "nbc":"nbc",
+    "abc":"abc",
+    "cbs":"cbs"
+  };
+  const clave = nombre.toLowerCase().trim();
+  return mapa[clave] ? `https://cdn.simpleicons.org/${mapa[clave]}` : null;
+}
 
 // ============================================
 // INICIALIZACIÓN
@@ -128,10 +139,7 @@ function getDiaSemanaYFecha(fechaStr) {
   if (!fechaStr) return 'Fecha TBA';
   const fecha = new Date(fechaStr + 'T12:00:00');
   if (isNaN(fecha)) return fechaStr;
-  
-  const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-  const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-  return `${dias[fecha.getDay()]} ${fecha.getDate()} ${meses[fecha.getMonth()]} ${fecha.getFullYear()}`;
+  return `${DIAS[fecha.getDay()]} ${fecha.getDate()} ${MESES[fecha.getMonth()]} ${fecha.getFullYear()}`;
 }
 
 function getFechaRelativa(fechaStr) {
@@ -173,7 +181,8 @@ function mostrarSeccion(id) {
     agendaFuente = 'espana';
     agendaFechaInicio = new Date();
     todosLosItemsAgenda = [];
-    document.getElementById('filtroFechaAgenda').value = 'all';
+    const selectFecha = document.getElementById('filtroFechaAgenda');
+    if (selectFecha) selectFecha.value = 'all';
     cargarAgenda(true);
     actualizarBotonesActivos('agenda', 'espana');
   }
@@ -404,8 +413,6 @@ function agregarResultadosConLogos(items, containerId) {
       item.plataformas.slice(0, 3).forEach(p => {
         if (p.logo_path) {
           logosHTML += `<img src="https://image.tmdb.org/t/p/w45${p.logo_path}" title="${p.provider_name}" style="width:25px; height:25px; border-radius:5px; object-fit:contain; background:white; padding:2px;">`;
-        } else {
-          logosHTML += `<span style="font-size:10px; background:#333; padding:2px 4px; border-radius:3px;">${p.provider_name.substring(0,3)}</span>`;
         }
       });
       logosHTML += '</div>';
@@ -425,9 +432,12 @@ function agregarResultadosConLogos(items, containerId) {
 }
 
 // ============================================
-// AGENDA TVMAZE (DEFINITIVA)
+// MÓDULO DE AGENDA TVMAZE + TMDb + Simple Icons
 // ============================================
 
+// ============================================
+// CARGAR AGENDA PRINCIPAL
+// ============================================
 async function cargarAgenda(reset = false) {
   if (agendaCargando) return;
 
@@ -445,7 +455,9 @@ async function cargarAgenda(reset = false) {
     const cache = localStorage.getItem(CACHE_KEY);
     if (cache) {
       const parsed = JSON.parse(cache);
-      if (Date.now() - parsed.timestamp < CACHE_TIME && parsed.fuente === agendaFuente && parsed.filtro === filtrosAgenda.fecha) {
+      if (Date.now() - parsed.timestamp < CACHE_TIME &&
+          parsed.fuente === agendaFuente &&
+          parsed.filtro === filtrosAgenda.fecha) {
         todosLosItemsAgenda = parsed.data;
         ocultarLoader('agendaContainer');
         mostrarAgenda(todosLosItemsAgenda, true);
@@ -454,46 +466,20 @@ async function cargarAgenda(reset = false) {
       }
     }
 
-    // Días a cargar según filtro
-    let diasACargar = 30;
-    if (filtrosAgenda.fecha === 'week') diasACargar = 7;
-    if (filtrosAgenda.fecha === 'month') diasACargar = 30;
-    if (filtrosAgenda.fecha === 'all') diasACargar = 60;
+    // Calcular rango de fechas según filtro
+    const hoy = new Date();
+    let fin = new Date();
+    if (filtrosAgenda.fecha === 'week') fin.setDate(hoy.getDate() + 7);
+    else if (filtrosAgenda.fecha === 'month') fin.setDate(hoy.getDate() + 30);
+    else fin.setDate(hoy.getDate() + 60);
 
-    let pais = agendaFuente === 'espana' ? 'ES' : 'US';
-    let peticiones = [];
-
-    // Generar peticiones en paralelo
-    for (let i = 0; i < diasACargar; i++) {
-      let fecha = new Date(agendaFechaInicio);
-      fecha.setDate(agendaFechaInicio.getDate() + i);
-      let fechaStr = fecha.toISOString().split('T')[0];
-
-      peticiones.push(
-        fetch(`https://api.tvmaze.com/schedule?country=${pais}&date=${fechaStr}`)
-          .then(res => res.json())
-          .catch(() => [])
-      );
+    // Cargar según fuente
+    let todosEpisodios = [];
+    if (agendaFuente === 'espana') {
+      todosEpisodios = await cargarAgendaTMDb(hoy, fin);
+    } else {
+      todosEpisodios = await cargarAgendaTVMaze(hoy, fin, 'US');
     }
-
-    const resultados = await Promise.all(peticiones);
-
-    let todosEpisodios = resultados.flat().map(ep => ({
-      id: ep.id,
-      titulo: ep.show?.name || 'Desconocido',
-      episodio: `S${ep.season}E${ep.number}`,
-      episodio_titulo: ep.name || '',
-      fecha: ep.airdate,
-      hora: ep.airtime ? ep.airtime.substring(0,5) : '--:--',
-      canal: ep.show?.network?.name ||
-             ep.show?.webChannel?.name ||
-             'Streaming',
-      imagen: ep.show?.image?.medium ||
-              ep.image?.medium ||
-              null,
-      show_id: ep.show?.id,
-      resumen: ep.summary?.replace(/<[^>]*>/g, '')?.substring(0, 80) || ''
-    }));
 
     todosLosItemsAgenda = todosEpisodios;
 
@@ -518,19 +504,101 @@ async function cargarAgenda(reset = false) {
   }
 }
 
+// ============================================
+// CARGAR AGENDA INTERNACIONAL (TVMAZE)
+// ============================================
+async function cargarAgendaTVMaze(hoy, fin, pais) {
+  const dias = [];
+  let current = new Date(hoy);
+  while (current <= fin) {
+    dias.push(current.toISOString().split('T')[0]);
+    current.setDate(current.getDate() + 1);
+  }
+
+  const resultados = await Promise.all(
+    dias.map(fecha => 
+      fetch(`https://api.tvmaze.com/schedule?country=${pais}&date=${fecha}`)
+        .then(r => r.json())
+        .catch(() => [])
+    )
+  );
+
+  return resultados.flat().map(ep => ({
+    id: ep.id,
+    titulo: ep.show?.name || 'Desconocido',
+    episodio: `S${ep.season}E${ep.number}`,
+    episodio_titulo: ep.name || '',
+    fecha: ep.airdate,
+    hora: ep.airtime?.substring(0,5) || '--:--',
+    canal: ep.show?.network?.name || ep.show?.webChannel?.name || 'Streaming',
+    imagen: ep.show?.image?.medium || ep.image?.medium || null,
+    show_id: ep.show?.id,
+    resumen: ep.summary?.replace(/<[^>]*>/g,'')?.substring(0,80) || ''
+  }));
+}
+
+// ============================================
+// CARGAR AGENDA ESPAÑA (TMDb)
+// ============================================
+async function cargarAgendaTMDb(hoy, fin) {
+  const episodios = [];
+  let pagina = 1;
+  let totalPaginas = 1;
+  const MAX_PAGINAS = 5; // Límite para no saturar la API
+
+  while (pagina <= totalPaginas && pagina <= MAX_PAGINAS) {
+    const url = `${BASEURL}tv/airing_today?api_key=${APIKEY}&language=es-ES&page=${pagina}`;
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      totalPaginas = data.total_pages;
+
+      data.results.forEach(show => {
+        if (!show.first_air_date) return;
+        const fecha = new Date(show.first_air_date);
+        if (fecha < hoy || fecha > fin) return;
+
+        episodios.push({
+          id: show.id,
+          titulo: show.name,
+          episodio: 'Próximo estreno',
+          episodio_titulo: show.name,
+          fecha: show.first_air_date,
+          hora: '--:--',
+          canal: show.networks?.[0]?.name || 'Streaming',
+          imagen: show.poster_path ? `https://image.tmdb.org/t/p/w200${show.poster_path}` : null,
+          show_id: show.id,
+          resumen: show.overview?.substring(0,80) || ''
+        });
+      });
+
+      pagina++;
+    } catch (e) {
+      console.error("Error en TMDb:", e);
+      break;
+    }
+  }
+
+  return episodios;
+}
+
+// ============================================
+// MOSTRAR AGENDA
+// ============================================
 function mostrarAgenda(items, reset = false) {
   const container = document.getElementById('agendaContainer');
   if (reset) container.innerHTML = '';
 
   if (!items.length) {
-    container.innerHTML =
-      '<p style="text-align:center;padding:2rem; color:#ffd700;">No hay episodios programados</p>';
+    container.innerHTML = '<p style="text-align:center;padding:2rem; color:#ffd700;">No hay episodios programados</p>';
     document.getElementById('agendaStats').innerHTML = '📺 0 episodios';
     return;
   }
 
-  items.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+  // Ordenar por fecha
+  items.sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
 
+  // Agrupar por fecha
   const agrupado = {};
   items.forEach(item => {
     if (!item.fecha) return;
@@ -539,69 +607,56 @@ function mostrarAgenda(items, reset = false) {
   });
 
   const fechas = Object.keys(agrupado).sort();
-  const totalEpisodios = items.length;
-
-  document.getElementById('agendaStats').innerHTML =
-    `📺 ${totalEpisodios} episodios en ${fechas.length} días`;
+  document.getElementById('agendaStats').innerHTML = `📺 ${items.length} episodios en ${fechas.length} días`;
 
   const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
-  
+  hoy.setHours(0,0,0,0);
   const manana = new Date(hoy);
   manana.setDate(manana.getDate() + 1);
 
   fechas.forEach(fecha => {
     const fechaObj = new Date(fecha + "T12:00:00");
     const numEpisodios = agrupado[fecha].length;
-
-    const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-
-    let fechaStr = `${dias[fechaObj.getDay()]} ${fechaObj.getDate()} de ${meses[fechaObj.getMonth()]}`;
     
+    let fechaStr = `${DIAS[fechaObj.getDay()]} ${fechaObj.getDate()} de ${MESES[fechaObj.getMonth()]}`;
     if (fechaObj.getFullYear() !== new Date().getFullYear()) {
       fechaStr += ` de ${fechaObj.getFullYear()}`;
     }
 
     let destacado = '';
-    if (fechaObj.getTime() === hoy.getTime()) {
-      destacado = ' 🔥 HOY';
-    } else if (fechaObj.getTime() === manana.getTime()) {
-      destacado = ' ⭐ MAÑANA';
-    }
+    if (fechaObj.getTime() === hoy.getTime()) destacado = ' 🔥 HOY';
+    else if (fechaObj.getTime() === manana.getTime()) destacado = ' ⭐ MAÑANA';
 
     const grupoDiv = document.createElement('div');
     grupoDiv.style.marginBottom = '20px';
-    grupoDiv.innerHTML =
-      `<h3 style="color:#ffd700; margin:15px 0 10px; font-size:18px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+    grupoDiv.innerHTML = `
+      <h3 style="color:#ffd700; margin:15px 0 10px; font-size:18px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
         <span>${fechaStr}${destacado}</span>
         <span style="font-size:14px; color:#999; background:rgba(255,255,255,0.1); padding:2px 8px; border-radius:12px;">
           ${numEpisodios} episodio${numEpisodios !== 1 ? 's' : ''}
         </span>
-      </h3>`;
+      </h3>
+    `;
 
-    agrupado[fecha].sort((a, b) => (a.hora || '99:99').localeCompare(b.hora || '99:99'));
+    // Ordenar por hora
+    agrupado[fecha].sort((a,b) => (a.hora || '99:99').localeCompare(b.hora || '99:99'));
 
     agrupado[fecha].forEach(item => {
       const div = document.createElement('div');
-      div.style.cssText =
-        'display:flex; align-items:center; gap:15px; padding:10px; background:rgba(255,255,255,0.05); border-radius:10px; margin-bottom:8px; transition:transform 0.2s;';
+      div.style.cssText = 'display:flex; align-items:center; gap:15px; padding:10px; background:rgba(255,255,255,0.05); border-radius:10px; margin-bottom:8px; transition:transform 0.2s;';
       div.onmouseover = () => div.style.transform = 'translateX(5px)';
       div.onmouseout = () => div.style.transform = 'translateX(0)';
 
-      let imagen = item.imagen
+      const imagen = item.imagen
         ? `<img src="${item.imagen}" style="width:40px; height:60px; border-radius:5px; object-fit:cover;">`
         : `<div style="width:40px; height:60px; background:#333; border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:20px;">📺</div>`;
 
-      // LOGO CON SIMPLE ICONS
-      let logoCanal = '';
-      const logoUrl = LOGOS_CANALES[item.canal];
-      if (logoUrl) {
-        logoCanal = `<img src="${logoUrl}" title="${item.canal}" style="width:16px; height:16px; margin-right:4px; filter:brightness(0) invert(1);">`;
-      }
+      const logoUrl = obtenerLogoCanal(item.canal);
+      const logoCanal = logoUrl
+        ? `<img src="${logoUrl}" title="${item.canal}" style="width:16px; height:16px; margin-right:4px; filter:brightness(0) invert(1);">`
+        : '';
 
-      let resumenHTML = item.resumen 
+      const resumenHTML = item.resumen
         ? `<div style="font-size:11px; color:#999; margin-top:4px;">${item.resumen}...</div>`
         : '';
 
@@ -612,22 +667,17 @@ function mostrarAgenda(items, reset = false) {
             ${item.titulo}
             ${item.episodio_titulo ? `<span style="font-size:12px; color:#ffd700;">${item.episodio_titulo}</span>` : ''}
           </div>
-          <div style="font-size:13px; color:#4ecdc4;">
-            ${item.episodio}
-          </div>
+          <div style="font-size:13px; color:#4ecdc4;">${item.episodio}</div>
           <div style="font-size:12px; color:#999; margin-top:3px; display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
-            <span style="display:flex; align-items:center;">
-              ${logoCanal}
-              📺 ${item.canal}
-            </span>
+            <span style="display:flex; align-items:center;">${logoCanal}📺 ${item.canal}</span>
             <span>🕒 ${item.hora}</span>
           </div>
           ${resumenHTML}
         </div>
         <button onclick='verDetalleShow(${item.show_id})' 
-                style="padding:6px 12px; background:var(--primary); border:none; border-radius:20px; color:white; cursor:pointer; font-size:12px; font-weight:bold; transition:transform 0.2s;"
-                onmouseover="this.style.transform='scale(1.05)'"
-                onmouseout="this.style.transform='scale(1)'">
+          style="padding:6px 12px; background:var(--primary); border:none; border-radius:20px; color:white; cursor:pointer; font-size:12px; font-weight:bold; transition:transform 0.2s;"
+          onmouseover="this.style.transform='scale(1.05)'"
+          onmouseout="this.style.transform='scale(1)'">
           Ver
         </button>
       `;
@@ -639,33 +689,56 @@ function mostrarAgenda(items, reset = false) {
   });
 }
 
+// ============================================
+// VER DETALLE DE SERIE
+// ============================================
 async function verDetalleShow(showId) {
   try {
     mostrarLoader('modal-content');
     
-    const response = await fetch(`https://api.tvmaze.com/shows/${showId}?embed=episodes`);
+    // Intentar con TVmaze primero
+    const response = await fetch(`https://api.tvmaze.com/shows/${showId}`);
     const show = await response.json();
 
     const item = {
       id: show.id,
       titulo: show.name,
-      overview: show.summary?.replace(/<[^>]*>/g, '') || 'Sin descripción disponible',
+      overview: show.summary?.replace(/<[^>]*>/g, '') || 'Sin descripción',
       poster: show.image?.medium,
       vote_average: show.rating?.average,
-      tipo: 'tv',
-      tmdb_id: show.externals?.thetvdb || show.id
+      tipo: 'tv'
     };
 
     ocultarLoader('modal-content');
     abrirModal(item);
   }
   catch (e) {
-    console.error("Error detalle:", e);
-    ocultarLoader('modal-content');
-    mostrarNotificacion("❌ Error cargando detalles", "error");
+    // Si falla TVmaze, intentar con TMDb
+    try {
+      const response = await fetch(`${BASEURL}tv/${showId}?api_key=${APIKEY}&language=es-ES`);
+      const show = await response.json();
+      
+      const item = {
+        id: show.id,
+        titulo: show.name,
+        overview: show.overview || 'Sin descripción',
+        poster: show.poster_path ? `https://image.tmdb.org/t/p/w200${show.poster_path}` : null,
+        vote_average: show.vote_average,
+        tipo: 'tv'
+      };
+      
+      ocultarLoader('modal-content');
+      abrirModal(item);
+    } catch (e2) {
+      ocultarLoader('modal-content');
+      mostrarNotificacion("❌ Error cargando detalles", "error");
+    }
   }
 }
 
+// ============================================
+// CAMBIAR FUENTE DE AGENDA
+// ============================================
 function cambiarFuenteAgenda(fuente) {
   agendaFuente = fuente;
   agendaFechaInicio = new Date();
@@ -677,6 +750,9 @@ function cambiarFuenteAgenda(fuente) {
   cargarAgenda(true);
 }
 
+// ============================================
+// APLICAR FILTROS DE FECHA
+// ============================================
 function aplicarFiltrosAgenda() {
   const select = document.getElementById('filtroFechaAgenda');
   if (!select) return;
