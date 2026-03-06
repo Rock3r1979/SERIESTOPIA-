@@ -1,6 +1,3 @@
-/* ============================================ */
-/* RESET Y VARIABLES */
-/* ============================================ */
 :root {
   --primary: #e74c3c;
   --primary-dark: #c0392b;
@@ -13,8 +10,8 @@
   --gold: #ffd700;
   --cyan: #4ecdc4;
   --border: rgba(255,255,255,0.12);
-  --shadow: 0 8px 24px rgba(0,0,0,0.35);
   --radius: 16px;
+  --shadow: 0 8px 24px rgba(0,0,0,0.35);
 }
 
 * {
@@ -34,9 +31,6 @@ body {
   min-height: 100vh;
 }
 
-/* ============================================ */
-/* HEADER */
-/* ============================================ */
 header {
   background: rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(10px);
@@ -55,14 +49,13 @@ header h1 {
   background: linear-gradient(45deg, var(--primary), #f39c12);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
 }
 
 nav {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.45rem;
 }
 
 nav button {
@@ -75,19 +68,14 @@ nav button {
   border-radius: 30px;
   transition: all 0.3s;
   font-size: 1rem;
-  backdrop-filter: blur(5px);
 }
 
 nav button:hover {
   background: var(--primary);
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
-  border-color: var(--primary);
 }
 
-/* ============================================ */
-/* SECCIONES */
-/* ============================================ */
 .seccion {
   display: none;
   padding: 2rem;
@@ -102,9 +90,6 @@ nav button:hover {
   padding: 1rem 0;
 }
 
-/* ============================================ */
-/* FILTROS */
-/* ============================================ */
 .filtros-seccion {
   grid-column: 1 / -1;
   display: flex;
@@ -114,8 +99,9 @@ nav button:hover {
   flex-wrap: wrap;
 }
 
-.filtro-btn {
-  padding: 0.8rem 2rem;
+.filtro-btn,
+.fuente-btn {
+  padding: 0.85rem 1.6rem;
   background: rgba(255,255,255,0.1);
   border: 2px solid var(--primary);
   color: white;
@@ -127,53 +113,23 @@ nav button:hover {
 }
 
 .filtro-btn:hover,
-.filtro-btn.active {
+.filtro-btn.active,
+.fuente-btn:hover,
+.fuente-btn.active {
   background: var(--primary);
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
 }
 
 .filtros-agenda {
-  grid-column: 1 / -1;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   background: rgba(0,0,0,0.22);
   border: 1px solid var(--border);
   border-radius: 18px;
-  padding: 1.25rem;
-  backdrop-filter: blur(10px);
+  padding: 1.2rem;
 }
 
-.selector-fuente {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin-bottom: 1.2rem;
-  flex-wrap: wrap;
-}
-
-.fuente-btn {
-  padding: 1rem 1.6rem;
-  background: rgba(255,255,255,0.05);
-  border: 2px solid transparent;
-  color: white;
-  border-radius: 40px;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-size: 1rem;
-  font-weight: bold;
-}
-
-.fuente-btn:hover {
-  background: rgba(255,255,255,0.1);
-  border-color: var(--primary);
-}
-
-.fuente-btn.active {
-  background: var(--primary);
-  border-color: var(--primary);
-  box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4);
-}
-
+.selector-fuente,
 .filtros-secundarios {
   display: flex;
   gap: 10px;
@@ -181,20 +137,41 @@ nav button:hover {
   flex-wrap: wrap;
 }
 
+.filtros-secundarios {
+  margin-top: 1rem;
+}
+
 #agendaStats {
   font-size: 1rem;
-  padding: 1rem 1.2rem;
+  padding: 0.95rem 1.1rem;
   background: rgba(255,255,255,0.08);
   border: 1px solid var(--border);
-  border-radius: 30px;
+  border-radius: 18px;
   margin-top: 1rem;
   text-align: center;
   color: var(--gold);
 }
 
-/* ============================================ */
-/* TARJETAS */
-/* ============================================ */
+select {
+  appearance: none;
+  padding: 0.75rem 2.5rem 0.75rem 1rem;
+  background: rgba(255,255,255,0.1);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 20px;
+}
+
+select option {
+  background: var(--bg-dark);
+  color: var(--text);
+}
+
 .card {
   background: rgba(255,255,255,0.08);
   backdrop-filter: blur(10px);
@@ -204,30 +181,27 @@ nav button:hover {
   transition: all 0.3s;
   cursor: pointer;
   border: 1px solid rgba(255,255,255,0.1);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-  position: relative;
+  box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
-  min-height: 100%;
   overflow: hidden;
 }
 
 .card:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 15px 30px rgba(231, 76, 60, 0.2);
+  transform: translateY(-8px);
   border-color: var(--primary);
 }
 
 .card img:first-child {
   width: 100%;
-  height: 220px;
+  height: 235px;
   object-fit: cover;
   border-radius: 12px;
   transition: transform 0.3s;
 }
 
 .card:hover img:first-child {
-  transform: scale(1.04);
+  transform: scale(1.03);
 }
 
 .card h4 {
@@ -237,17 +211,12 @@ nav button:hover {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex-grow: 1;
 }
 
 .card p {
   font-size: 0.85rem;
   color: var(--gold);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.3rem;
-  margin: 0.15rem 0;
+  margin: 0.12rem 0;
 }
 
 .card-plataformas {
@@ -263,33 +232,26 @@ nav button:hover {
 }
 
 .plataforma-mini {
-  width: 28px !important;
-  height: 28px !important;
+  width: 24px !important;
+  height: 24px !important;
   border-radius: 6px;
-  transition: transform 0.2s;
-  cursor: pointer;
   object-fit: contain;
   background: rgba(255,255,255,0.96);
   padding: 3px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
 
-.plataforma-mini:hover {
-  transform: scale(1.16);
-  z-index: 10;
-}
-
 .mas-plataformas {
-  font-size: 0.78rem;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(231, 76, 60, 0.9);
   color: white;
+  font-size: 0.72rem;
   font-weight: bold;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(231, 76, 60, 0.9);
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
 }
 
 .card .btn-eliminar {
@@ -301,18 +263,9 @@ nav button:hover {
   border-radius: 8px;
   color: white;
   cursor: pointer;
-  transition: all 0.3s;
   width: 100%;
 }
 
-.card .btn-eliminar:hover {
-  background: #d32f2f;
-  transform: scale(1.02);
-}
-
-/* ============================================ */
-/* MODAL */
-/* ============================================ */
 .modal {
   display: none;
   position: fixed;
@@ -321,7 +274,6 @@ nav button:hover {
   overflow-y: auto;
   background-color: rgba(0,0,0,0.95);
   padding: 2rem 1rem;
-  backdrop-filter: blur(5px);
 }
 
 .modal-content {
@@ -342,11 +294,6 @@ nav button:hover {
   font-size: 2.5rem;
   cursor: pointer;
   color: var(--primary);
-  transition: transform 0.3s;
-}
-
-.close:hover {
-  transform: scale(1.15);
 }
 
 #detalle h2 {
@@ -358,7 +305,6 @@ nav button:hover {
 #detalle p {
   margin-bottom: 0.7rem;
   line-height: 1.55;
-  color: #f1f1f1;
 }
 
 #acciones {
@@ -377,20 +323,13 @@ nav button:hover {
   padding: 0.7rem 1.3rem;
   background: rgba(255,255,255,0.1);
   color: var(--text);
-  transition: all 0.3s;
   border: 1px solid rgba(255,255,255,0.2);
-  font-size: 0.95rem;
 }
 
 #acciones button:hover {
   background: var(--primary);
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
 }
 
-/* ============================================ */
-/* PLATAFORMAS EN MODAL */
-/* ============================================ */
 #plataformasContainer {
   display: flex;
   gap: 10px;
@@ -402,163 +341,212 @@ nav button:hover {
 #plataformasContainer h3 {
   width: 100%;
   color: var(--gold);
-  margin-bottom: 0.3rem;
 }
 
 #plataformasContainer img {
-  width: 45px;
-  height: 45px;
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
-  transition: transform 0.3s;
-  cursor: pointer;
   object-fit: contain;
   background: rgba(255,255,255,0.96);
-  padding: 5px;
+  padding: 4px;
 }
 
-#plataformasContainer img:hover {
-  transform: scale(1.12);
-}
-
-/* ============================================ */
-/* TEMPORADAS */
-/* ============================================ */
 .temporada {
   background: rgba(255,255,255,0.05);
   margin: 0.8rem 0;
   padding: 1rem;
   border-radius: 10px;
   border-left: 3px solid var(--primary);
-  transition: all 0.3s;
 }
 
-.temporada:hover {
-  background: rgba(255,255,255,0.08);
-}
-
-.temporada h4 {
-  color: var(--primary);
-  margin-bottom: 0.5rem;
-}
-
-.temporada ul {
-  list-style: none;
-  margin-top: 0.8rem;
-}
-
-.temporada li {
-  padding: 0.5rem;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.95rem;
-}
-
-.temporada li:hover {
-  background: rgba(255,255,255,0.05);
-  border-radius: 5px;
-}
-
-/* ============================================ */
-/* ESTRELLAS */
-/* ============================================ */
 .star {
   cursor: pointer;
   font-size: 1.5rem;
-  transition: all 0.3s;
   display: inline-block;
-}
-
-.star:hover {
-  transform: scale(1.2);
 }
 
 .star.active {
   filter: drop-shadow(0 0 5px gold);
 }
 
-/* ============================================ */
-/* AGENDA */
-/* ============================================ */
+/* AGENDA NUEVA */
 #agendaContainer {
   display: block;
 }
 
-.agenda-grupo {
+.agenda-bloque {
   margin-bottom: 2rem;
-  background: rgba(255,255,255,0.03);
-  border-radius: 15px;
-  overflow: hidden;
 }
 
-.agenda-fecha {
-  background: var(--primary);
-  padding: 0.8rem 1.5rem;
-  margin: 0;
-  font-size: 1.2rem;
+.agenda-dia-titulo {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
+  gap: 1rem;
+  margin: 0 0 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.08);
+  color: var(--gold);
+  border: 1px solid rgba(255,255,255,0.08);
 }
 
-.fecha-relativa {
-  font-size: 0.9rem;
-  background: rgba(255,255,255,0.2);
-  padding: 0.3rem 0.8rem;
-  border-radius: 20px;
+.agenda-dia-titulo small {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  white-space: nowrap;
 }
 
-.agenda-items {
-  padding: 1rem;
+.agenda-card {
+  display: grid;
+  grid-template-columns: 96px 1fr auto;
+  gap: 14px;
+  align-items: start;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 12px;
 }
 
-.agenda-item {
-  background: rgba(0,0,0,0.3);
-  margin-bottom: 0.5rem;
-  padding: 1rem;
-  border-radius: 10px;
-  border-left: 3px solid transparent;
+.agenda-poster-wrap {
+  width: 96px;
 }
 
-.agenda-item .plataformas-mini {
-  display: flex;
-  gap: 6px;
-  margin-top: 8px;
-  flex-wrap: wrap;
-  align-items: center;
+.agenda-poster {
+  width: 96px;
+  height: 138px;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
 }
 
-.agenda-item .plataformas-mini img {
-  width: 28px !important;
-  height: 28px !important;
-  border-radius: 6px;
-  transition: transform 0.2s;
-  object-fit: contain;
-  background: rgba(255,255,255,0.96);
-  padding: 3px;
-}
-
-.agenda-item .plataformas-mini img:hover {
-  transform: scale(1.15);
-}
-
-.agenda-item .plataformas-mini span {
-  font-size: 0.75rem;
-  color: white;
-  font-weight: bold;
-  background: rgba(231, 76, 60, 0.9);
-  width: 28px;
-  height: 28px;
+.agenda-poster-fallback {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  background: rgba(255,255,255,0.08);
+  color: white;
+  font-size: 2rem;
 }
 
-/* ============================================ */
-/* PERFIL */
-/* ============================================ */
+.agenda-info {
+  min-width: 0;
+}
+
+.agenda-topline {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.agenda-titulo {
+  font-size: 1.05rem;
+  line-height: 1.3;
+  color: white;
+  margin: 0;
+  word-break: break-word;
+}
+
+.agenda-badge {
+  background: rgba(78, 205, 196, 0.18);
+  color: var(--cyan);
+  border: 1px solid rgba(78, 205, 196, 0.35);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.agenda-episodio {
+  margin-top: 0.35rem;
+  color: var(--gold);
+  font-size: 0.92rem;
+}
+
+.agenda-ep-titulo {
+  margin-top: 0.2rem;
+  color: #d9d9d9;
+  font-size: 0.9rem;
+}
+
+.agenda-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 0.55rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.agenda-plataformas {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+  align-items: center;
+}
+
+.agenda-platform-logo {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  border-radius: 5px;
+  background: rgba(255,255,255,0.96);
+  padding: 2px;
+}
+
+.agenda-platform-text,
+.agenda-plataforma-empty {
+  min-width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: rgba(231, 76, 60, 0.9);
+  color: white;
+  font-size: 0.68rem;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+}
+
+.agenda-resumen {
+  margin-top: 0.7rem;
+  color: #d6d6d6;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.agenda-accion {
+  display: flex;
+  align-items: center;
+}
+
+.agenda-btn,
+.agenda-more-btn {
+  padding: 0.65rem 1rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--primary);
+  color: white;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.agenda-btn:hover,
+.agenda-more-btn:hover {
+  background: var(--primary-dark);
+}
+
+.agenda-more {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0 0;
+}
+
 .perfil-container {
   max-width: 800px;
   margin: 0 auto;
@@ -576,7 +564,6 @@ nav button:hover {
   background: rgba(255,255,255,0.05);
   border-radius: 20px;
   padding: 2rem;
-  backdrop-filter: blur(10px);
   border: 1px solid rgba(255,255,255,0.1);
 }
 
@@ -595,7 +582,6 @@ nav button:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 5px 20px rgba(231, 76, 60, 0.3);
 }
 
 .perfil-info h3 {
@@ -613,43 +599,37 @@ nav button:hover {
   margin-bottom: 1rem;
 }
 
-.perfil-acciones {
+.perfil-acciones,
+.compartir-box,
+.newsletter-form {
   display: flex;
   gap: 10px;
-  margin: 1rem 0;
   flex-wrap: wrap;
 }
 
-.alias-input {
+.alias-input,
+.enlace-input,
+.newsletter input {
   flex: 1;
   padding: 0.8rem 1rem;
   border-radius: 10px;
   border: 1px solid rgba(255,255,255,0.2);
   background: rgba(0,0,0,0.3);
   color: white;
-  font-size: 1rem;
-  min-width: 200px;
+  min-width: 220px;
 }
 
-.alias-input:focus {
-  outline: none;
-  border-color: var(--primary);
-}
-
-.btn-perfil {
-  padding: 0.8rem 1.5rem;
+.btn-perfil,
+.btn-copiar,
+.btn-compartir,
+.newsletter button,
+#exportImport button {
+  padding: 0.8rem 1.3rem;
   background: var(--primary);
   border: none;
   border-radius: 10px;
   color: white;
   cursor: pointer;
-  transition: all 0.3s;
-  font-weight: bold;
-}
-
-.btn-perfil:hover {
-  background: var(--primary-dark);
-  transform: translateY(-2px);
 }
 
 .perfil-stats {
@@ -660,68 +640,14 @@ nav button:hover {
 }
 
 .perfil-stats p {
-  margin: 0.8rem 0;
-  font-size: 1.05rem;
+  margin: 0.75rem 0;
 }
 
 .perfil-stats span {
   color: var(--gold);
   font-weight: bold;
-  margin-left: 0.5rem;
 }
 
-.compartir-box {
-  display: flex;
-  gap: 10px;
-  margin: 1rem 0;
-}
-
-.enlace-input {
-  flex: 1;
-  padding: 0.8rem 1rem;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.2);
-  background: rgba(0,0,0,0.3);
-  color: white;
-  font-size: 0.9rem;
-}
-
-.btn-copiar {
-  padding: 0.8rem 1.5rem;
-  background: #4CAF50;
-  border: none;
-  border-radius: 10px;
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.btn-copiar:hover {
-  background: #45a049;
-  transform: translateY(-2px);
-}
-
-.btn-compartir {
-  width: 100%;
-  padding: 1rem;
-  background: var(--primary);
-  border: none;
-  border-radius: 10px;
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-weight: bold;
-  margin-top: 1rem;
-}
-
-.btn-compartir:hover {
-  background: var(--primary-dark);
-  transform: translateY(-2px);
-}
-
-/* ============================================ */
-/* CONTACTO */
-/* ============================================ */
 .contacto-container {
   max-width: 1000px;
   margin: 0 auto;
@@ -761,18 +687,17 @@ nav button:hover {
 }
 
 .red-social:hover {
-  transform: translateY(-10px);
+  transform: translateY(-8px);
   background: rgba(231, 76, 60, 0.2);
-  border-color: var(--primary);
-  box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
 }
 
 .red-social .icono {
   font-size: 3rem;
-  line-height: 1;
 }
 
-.contacto-info {
+.contacto-info,
+.newsletter,
+#exportImport {
   margin: 3rem 0;
   padding: 2rem;
   background: rgba(255,255,255,0.05);
@@ -780,108 +705,12 @@ nav button:hover {
   border: 1px solid rgba(255,255,255,0.1);
 }
 
-.contacto-info h3 {
-  color: var(--primary);
-  margin-bottom: 1rem;
-  font-size: 1.5rem;
-}
-
-.contacto-info p {
-  margin: 0.55rem 0;
-}
-
 .contacto-info a {
   color: var(--primary);
   text-decoration: none;
   font-weight: bold;
-  transition: color 0.3s;
 }
 
-.contacto-info a:hover {
-  color: #f39c12;
-  text-decoration: underline;
-}
-
-.newsletter {
-  margin: 3rem 0;
-  padding: 2rem;
-  background: linear-gradient(135deg, rgba(231,76,60,0.1), rgba(243,156,18,0.1));
-  border-radius: 20px;
-}
-
-.newsletter h3 {
-  color: var(--primary);
-  margin-bottom: 1rem;
-}
-
-.newsletter-form {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-top: 1rem;
-}
-
-.newsletter input {
-  padding: 1rem 1.5rem;
-  width: 300px;
-  max-width: 100%;
-  border-radius: 30px;
-  border: 2px solid var(--primary);
-  background: rgba(0,0,0,0.3);
-  color: white;
-  font-size: 1rem;
-}
-
-.newsletter input:focus {
-  outline: none;
-  box-shadow: 0 0 10px var(--primary);
-}
-
-.newsletter button {
-  padding: 1rem 2rem;
-  background: var(--primary);
-  border: none;
-  border-radius: 30px;
-  color: white;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: bold;
-  transition: all 0.3s;
-  border: 2px solid transparent;
-}
-
-.newsletter button:hover {
-  background: transparent;
-  border-color: var(--primary);
-  transform: scale(1.05);
-}
-
-.colabora {
-  margin: 3rem 0;
-}
-
-.boton-github {
-  display: inline-block;
-  padding: 1rem 2rem;
-  background: #333;
-  color: white;
-  text-decoration: none;
-  border-radius: 30px;
-  font-weight: bold;
-  transition: all 0.3s;
-  border: 2px solid transparent;
-}
-
-.boton-github:hover {
-  background: transparent;
-  border-color: #333;
-  transform: scale(1.05);
-}
-
-/* ============================================ */
-/* BUSCADOR */
-/* ============================================ */
 #buscar {
   text-align: center;
 }
@@ -896,7 +725,6 @@ nav button:hover {
   background: rgba(255,255,255,0.1);
   color: var(--text);
   font-size: 1rem;
-  transition: all 0.3s;
 }
 
 #buscar input {
@@ -904,94 +732,9 @@ nav button:hover {
   max-width: 80%;
 }
 
-#buscar input::placeholder {
-  color: rgba(255,255,255,0.5);
-}
-
-#buscar button {
-  background: var(--primary);
-  cursor: pointer;
-}
-
-#buscar button:hover {
-  background: var(--primary-dark);
-  transform: scale(1.05);
-}
-
-/* ============================================ */
-/* EXPORT / IMPORT */
-/* ============================================ */
-#exportImport {
-  margin: 2rem 1rem;
-  text-align: center;
-  padding: 1.5rem;
-  background: rgba(255,255,255,0.05);
-  border-radius: 25px;
-  border: 1px solid rgba(255,255,255,0.08);
-}
-
-#exportImport button,
-#exportImport input,
-#exportImport label {
-  margin: 0.3rem;
-}
-
-#exportImport button {
-  padding: 0.7rem 1.3rem;
-  border-radius: 25px;
-  border: 1px solid rgba(255,255,255,0.2);
-  background: rgba(255,255,255,0.1);
-  color: var(--text);
-  cursor: pointer;
-  transition: all 0.3s;
-  font-size: 0.95rem;
-}
-
-#exportImport button:hover {
-  background: var(--primary);
-  transform: translateY(-2px);
-}
-
-#exportImport input[type="file"] {
-  color: var(--text);
-}
-
-/* ============================================ */
-/* SELECTORES */
-/* ============================================ */
-select {
-  appearance: none;
-  padding: 0.7rem 2.5rem 0.7rem 1.1rem;
-  background: rgba(255,255,255,0.1);
-  color: var(--text);
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 25px;
-  cursor: pointer;
-  font-size: 0.95rem;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 20px;
-}
-
-select:hover,
-select:focus {
-  border-color: var(--primary);
-  outline: none;
-}
-
-select option {
-  background: var(--bg-dark);
-  color: var(--text);
-}
-
-/* ============================================ */
-/* LOADER Y TOAST */
-/* ============================================ */
 .loader {
   text-align: center;
   padding: 2rem;
-  grid-column: 1 / -1;
   color: var(--gold);
   font-size: 1.2rem;
 }
@@ -1004,8 +747,8 @@ select option {
   border-radius: 8px;
   color: white;
   z-index: 3000;
-  animation: slideUp 0.3s ease;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  animation: slideUp 0.3s ease;
 }
 
 .toast-success { background: #4caf50; }
@@ -1017,9 +760,6 @@ select option {
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* ============================================ */
-/* SCROLLBAR */
-/* ============================================ */
 ::-webkit-scrollbar {
   width: 10px;
 }
@@ -1033,23 +773,6 @@ select option {
   border-radius: 5px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-dark);
-}
-
-/* ============================================ */
-/* RESPONSIVE */
-/* ============================================ */
-@media (max-width: 992px) {
-  .seccion {
-    padding: 1.5rem;
-  }
-
-  .modal-content {
-    padding: 1.5rem;
-  }
-}
-
 @media (max-width: 768px) {
   header h1 {
     font-size: 1.8rem;
@@ -1060,13 +783,39 @@ select option {
     font-size: 0.9rem;
   }
 
+  .seccion {
+    padding: 1.1rem;
+  }
+
   .grid {
     grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
     gap: 1rem;
   }
 
   .card img:first-child {
-    height: 180px;
+    height: 190px;
+  }
+
+  .filtros-secundarios,
+  .perfil-acciones,
+  .compartir-box,
+  .newsletter-form {
+    flex-direction: column;
+  }
+
+  .agenda-card {
+    grid-template-columns: 72px 1fr;
+  }
+
+  .agenda-accion {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+
+  .agenda-poster-wrap,
+  .agenda-poster {
+    width: 72px;
+    height: 108px;
   }
 
   #acciones {
@@ -1078,39 +827,9 @@ select option {
   #acciones select {
     width: 100%;
   }
-
-  .perfil-acciones,
-  .compartir-box,
-  .newsletter-form {
-    flex-direction: column;
-  }
-
-  .btn-copiar,
-  .alias-input,
-  .enlace-input,
-  .newsletter input {
-    width: 100%;
-  }
-
-  .filtros-secundarios {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .filtros-secundarios select {
-    width: 100%;
-  }
-
-  #agendaStats {
-    border-radius: 16px;
-  }
 }
 
 @media (max-width: 520px) {
-  .seccion {
-    padding: 1rem;
-  }
-
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1119,17 +838,14 @@ select option {
     height: 165px;
   }
 
-  .modal {
-    padding: 1rem 0.5rem;
+  .agenda-dia-titulo {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .modal-content {
-    padding: 1.2rem;
-    border-radius: 16px;
-  }
-
-  #detalle h2 {
-    font-size: 1.5rem;
+  .agenda-topline {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .red-social {
