@@ -31,7 +31,7 @@ let filtrosAgenda = {
   plataforma: 'all'
 };
 
-const CACHE_KEY = 'agenda_tvmaze_web_v1';
+const CACHE_KEY = 'agenda_tvmaze_v3';
 const CACHE_TIME = 60 * 30 * 1000;
 
 const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -62,6 +62,7 @@ const PLATFORM_MAP = {
   'atresplayer': 'atresplayer',
   'mitele': 'mitele',
   'paramount+': 'paramountplus',
+  'paramount plus': 'paramountplus',
   'peacock': 'peacock',
   'hulu': 'hulu'
 };
@@ -145,32 +146,31 @@ function providerLogoUrl(provider) {
 
 function obtenerLogoCanal(nombre) {
   if (!nombre) return null;
-
   const mapa = {
-    "netflix":"netflix",
-    "disney+":"disneyplus",
-    "disney plus":"disneyplus",
-    "hbo":"hbo",
-    "hbo max":"hbomax",
-    "max":"hbomax",
-    "amazon prime video":"primevideo",
-    "prime video":"primevideo",
-    "apple tv+":"appletv",
-    "apple tv plus":"appletv",
-    "apple tv":"appletv",
-    "movistar+":"movistar",
-    "movistar plus+":"movistar",
-    "movistar plus":"movistar",
-    "skyshowtime":"skyshowtime",
-    "filmin":"filmin",
-    "rakuten tv":"rakutentv",
-    "atresplayer":"atresplayer",
-    "mitele":"telecinco",
-    "paramount+":"paramountplus",
-    "peacock":"peacock",
-    "hulu":"hulu"
+    'netflix': 'netflix',
+    'disney+': 'disneyplus',
+    'disney plus': 'disneyplus',
+    'hbo': 'hbo',
+    'hbo max': 'hbomax',
+    'max': 'hbomax',
+    'amazon prime video': 'primevideo',
+    'prime video': 'primevideo',
+    'apple tv+': 'appletv',
+    'apple tv plus': 'appletv',
+    'apple tv': 'appletv',
+    'movistar+': 'movistar',
+    'movistar plus+': 'movistar',
+    'movistar plus': 'movistar',
+    'skyshowtime': 'skyshowtime',
+    'filmin': 'filmin',
+    'rakuten tv': 'rakutentv',
+    'atresplayer': 'atresplayer',
+    'mitele': 'telecinco',
+    'paramount+': 'paramountplus',
+    'paramount plus': 'paramountplus',
+    'peacock': 'peacock',
+    'hulu': 'hulu'
   };
-
   const clave = normalizarTexto(nombre);
   return mapa[clave] ? `https://cdn.simpleicons.org/${mapa[clave]}` : null;
 }
@@ -181,27 +181,16 @@ function renderizarMiniPlataformas(plataformas = [], max = 4) {
   plataformas.slice(0, max).forEach(p => {
     const logo = providerLogoUrl(p) || obtenerLogoCanal(p.provider_name || '');
     if (logo) html += `<img src="${logo}" title="${escapeHtml(p.provider_name || '')}" class="plataforma-mini">`;
-    else html += `<span class="mas-plataformas">${escapeHtml((p.provider_name || '?').substring(0,2))}</span>`;
+    else html += `<span class="mas-plataformas">${escapeHtml((p.provider_name || '?').substring(0, 2))}</span>`;
   });
   if (plataformas.length > max) html += `<span class="mas-plataformas">+${plataformas.length - max}</span>`;
   html += '</div>';
   return html;
 }
 
-function deduplicarPorClave(items, keyFn) {
-  const seen = new Set();
-  return items.filter(item => {
-    const key = keyFn(item);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
 function itemTienePlataforma(item, plataformaFiltro) {
   if (plataformaFiltro === 'all') return true;
-  const plataformas = item.plataformas || [];
-  return plataformas.some(p => {
+  return (item.plataformas || []).some(p => {
     const code = p.provider_code || normalizarProveedor(p.provider_name || '');
     return code === plataformaFiltro;
   });
@@ -231,7 +220,6 @@ document.addEventListener('DOMContentLoaded', () => {
 let scrollTimeout;
 window.addEventListener('scroll', () => {
   if (scrollTimeout) clearTimeout(scrollTimeout);
-
   scrollTimeout = setTimeout(() => {
     const nearBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 500;
     if (!nearBottom) return;
@@ -244,13 +232,9 @@ window.addEventListener('scroll', () => {
     if (id === 'series' && !buscando && seriesPage <= 50) cargarSeries(false);
     if (id === 'tendencias' && !tendenciasCargando && tendenciasPage <= 50) cargarTendencias(false);
     if (id === 'buscar' && buscando && busquedaPage <= 50) buscar(true);
-
     if (id === 'agenda' && !agendaScrollLock) {
       agendaScrollLock = true;
-      setTimeout(() => {
-        cargarMasAgenda();
-        agendaScrollLock = false;
-      }, 100);
+      setTimeout(() => { cargarMasAgenda(); agendaScrollLock = false; }, 100);
     }
   }, 200);
 });
@@ -260,11 +244,14 @@ window.addEventListener('scroll', () => {
 // ============================================
 function mostrarSeccion(id) {
   document.querySelectorAll('.seccion').forEach(s => s.style.display = 'none');
-
   const target = document.getElementById(id);
   if (!target) return;
 
-  target.style.display = (id === 'agenda' || id === 'perfil' || id === 'buscar' || id === 'contacto') ? 'block' : 'grid';
+  if (id === 'agenda' || id === 'perfil' || id === 'buscar' || id === 'contacto') {
+    target.style.display = 'block';
+  } else {
+    target.style.display = 'grid';
+  }
 
   if (id === 'miLista') cargarMiLista();
   if (id === 'buscar') document.getElementById('contenedorBuscar').innerHTML = '';
@@ -281,16 +268,12 @@ function mostrarSeccion(id) {
   if (id === 'agenda') {
     todosLosItemsAgenda = [];
     agendaItemsVisibles = 0;
-
     const selectFecha = document.getElementById('filtroFechaAgenda');
     const selectPlataforma = document.getElementById('filtroPlataformaAgenda');
-
     if (selectFecha) selectFecha.value = 'month';
     if (selectPlataforma) selectPlataforma.value = 'all';
-
     filtrosAgenda.fecha = 'month';
     filtrosAgenda.plataforma = 'all';
-
     cargarAgenda(true);
   }
 
@@ -319,14 +302,13 @@ async function enriquecerConPlataformasTMDb(item, tipo) {
 }
 
 // ============================================
-// PELÍCULAS / SERIES / TENDENCIAS
+// PELÍCULAS
 // ============================================
 async function cargarPeliculas(reset = false) {
   if (reset) {
     peliculasPage = 1;
     document.getElementById('peliculas').innerHTML = '';
   }
-
   mostrarLoader('peliculas');
 
   let url;
@@ -343,28 +325,25 @@ async function cargarPeliculas(reset = false) {
   try {
     const res = await fetch(url);
     const data = await res.json();
-
-    const items = await Promise.all(
-      (data.results || []).map(item => enriquecerConPlataformasTMDb(item, 'movie'))
-    );
-
+    const items = await Promise.all((data.results || []).map(i => enriquecerConPlataformasTMDb(i, 'movie')));
     ocultarLoader('peliculas');
     if (reset) mostrarResultadosConLogos(items, 'peliculas');
     else agregarResultadosConLogos(items, 'peliculas');
     peliculasPage++;
   } catch (e) {
     ocultarLoader('peliculas');
-    console.error('Error películas:', e);
     mostrarNotificacion('❌ Error cargando películas', 'error');
   }
 }
 
+// ============================================
+// SERIES
+// ============================================
 async function cargarSeries(reset = false) {
   if (reset) {
     seriesPage = 1;
     document.getElementById('series').innerHTML = '';
   }
-
   mostrarLoader('series');
 
   let url;
@@ -381,30 +360,26 @@ async function cargarSeries(reset = false) {
   try {
     const res = await fetch(url);
     const data = await res.json();
-
-    const items = await Promise.all(
-      (data.results || []).map(item => enriquecerConPlataformasTMDb(item, 'tv'))
-    );
-
+    const items = await Promise.all((data.results || []).map(i => enriquecerConPlataformasTMDb(i, 'tv')));
     ocultarLoader('series');
     if (reset) mostrarResultadosConLogos(items, 'series');
     else agregarResultadosConLogos(items, 'series');
     seriesPage++;
   } catch (e) {
     ocultarLoader('series');
-    console.error('Error series:', e);
     mostrarNotificacion('❌ Error cargando series', 'error');
   }
 }
 
+// ============================================
+// TENDENCIAS
+// ============================================
 async function cargarTendencias(reset = false) {
   if (tendenciasCargando) return;
-
   if (reset) {
     tendenciasPage = 1;
     document.getElementById('tendenciasContainer').innerHTML = '';
   }
-
   tendenciasCargando = true;
   mostrarLoader('tendenciasContainer');
 
@@ -415,18 +390,15 @@ async function cargarTendencias(reset = false) {
 
     const res = await fetch(`${BASEURL}${endpoint}`);
     const data = await res.json();
-
     const items = await Promise.all(
-      (data.results || []).map(item => enriquecerConPlataformasTMDb(item, item.title ? 'movie' : 'tv'))
+      (data.results || []).map(i => enriquecerConPlataformasTMDb(i, i.title ? 'movie' : 'tv'))
     );
-
     ocultarLoader('tendenciasContainer');
     if (reset) mostrarResultadosConLogos(items, 'tendenciasContainer');
     else agregarResultadosConLogos(items, 'tendenciasContainer');
     tendenciasPage++;
   } catch (e) {
     ocultarLoader('tendenciasContainer');
-    console.error('Error tendencias:', e);
     mostrarNotificacion('❌ Error cargando tendencias', 'error');
   } finally {
     tendenciasCargando = false;
@@ -450,7 +422,6 @@ function tarjetaItemHTML(item) {
     ? `https://image.tmdb.org/t/p/w300${item.poster_path}`
     : item.poster || item.imagen || '';
   const nota = item.vote_average ?? item.vote ?? 0;
-
   if (!poster) return '';
 
   return `
@@ -465,20 +436,16 @@ function tarjetaItemHTML(item) {
 function mostrarResultadosConLogos(items, contenedorId) {
   const cont = document.getElementById(contenedorId);
   if (!cont) return;
-
-  if (contenedorId !== 'tendenciasContainer' && contenedorId !== 'contenedorBuscar') {
-    cont.innerHTML = '';
-  }
+  cont.innerHTML = '';
 
   if (!items.length) {
-    cont.innerHTML = '<p style="text-align:center;padding:2rem;">No hay resultados.</p>';
+    cont.innerHTML = '<p style="text-align:center;padding:2rem;grid-column:1/-1">No hay resultados.</p>';
     return;
   }
 
   items.forEach(item => {
     const html = tarjetaItemHTML(item);
     if (!html) return;
-
     const div = document.createElement('div');
     div.classList.add('card');
     div.innerHTML = html;
@@ -490,11 +457,9 @@ function mostrarResultadosConLogos(items, contenedorId) {
 function agregarResultadosConLogos(items, containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
-
   items.forEach(item => {
     const html = tarjetaItemHTML(item);
     if (!html) return;
-
     const div = document.createElement('div');
     div.classList.add('card');
     div.innerHTML = html;
@@ -504,20 +469,19 @@ function agregarResultadosConLogos(items, containerId) {
 }
 
 // ============================================
-// AGENDA TVMAZE WEB GLOBAL
+// AGENDA TVMAZE
 // ============================================
 async function cargarAgendaTVMazeWeb() {
   const { hoy, dias } = getRangoAgenda();
   const fechas = [];
-  const resultadosPorDia = [];
 
-  for (let i = 0; i < dias; i++) {
+  for (let i = 0; i < Math.min(dias, 14); i++) {
     fechas.push(getDateISO(sumarDias(hoy, i)));
   }
 
   const peticiones = fechas.map(async fecha => {
     try {
-      const res = await fetch(`${TVMAZE_BASE}/schedule/web?date=${fecha}`);
+      const res = await fetch(`${TVMAZE_BASE}/schedule/web?date=${fecha}&embed=show`);
       const data = await res.json();
       return { fecha, data: Array.isArray(data) ? data : [] };
     } catch {
@@ -526,55 +490,42 @@ async function cargarAgendaTVMazeWeb() {
   });
 
   const bloques = await Promise.all(peticiones);
+  const resultados = [];
 
   bloques.forEach(({ fecha, data }) => {
-    const normalizados = data.map(ep => {
-      const show = ep.show || {};
+    data.forEach(ep => {
+      const show = ep._embedded?.show || ep.show || {};
+      if (!show || !show.id) return;
+
       const providerName = show.webChannel?.name || show.network?.name || 'Streaming';
       const providerCode = normalizarProveedor(providerName);
 
-      return {
+      resultados.push({
         episodioId: ep.id,
         showId: show.id,
         titulo: show.name || 'Sin título',
         fecha: ep.airdate || fecha,
-        hora: ep.airstamp
-          ? new Date(ep.airstamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-          : (ep.airtime?.substring(0,5) || '--:--'),
+        hora: ep.airtime?.substring(0, 5) || '--:--',
         temporada: ep.season || 0,
         numero: ep.number || 0,
         episodioTitulo: ep.name || '',
-        resumen: limpiarHtml(show.summary || ep.summary || '').substring(0, 180),
-        imagen: show.image?.original || show.image?.medium || ep.image?.medium || null,
-        poster: show.image?.original || show.image?.medium || ep.image?.medium || null,
-        plataformas: [{
-          provider_name: providerName,
-          provider_code: providerCode
-        }],
-        canal: providerName,
-        externals: show.externals || {},
-        webChannel: show.webChannel || null,
-        network: show.network || null,
-        language: show.language || '',
-        genres: show.genres || [],
-        officialSite: show.officialSite || '',
-        runtime: show.runtime || null,
-        type: show.type || '',
-        status: show.status || ''
-      };
+        resumen: limpiarHtml(show.summary || ep.summary || '').substring(0, 200),
+        imagen: show.image?.original || show.image?.medium || null,
+        plataformas: [{ provider_name: providerName, provider_code: providerCode }],
+        canal: providerName
+      });
     });
-
-    resultadosPorDia.push(...normalizados);
   });
 
+  // Agrupar por show + fecha
   const agrupados = {};
-  resultadosPorDia.forEach(item => {
+  resultados.forEach(item => {
     const key = `${item.showId}-${item.fecha}`;
     if (!agrupados[key]) agrupados[key] = [];
     agrupados[key].push(item);
   });
 
-  const itemsAgrupados = Object.values(agrupados).map(grupo => {
+  return Object.values(agrupados).map(grupo => {
     grupo.sort((a, b) => {
       if (a.temporada !== b.temporada) return a.temporada - b.temporada;
       return a.numero - b.numero;
@@ -584,21 +535,18 @@ async function cargarAgendaTVMazeWeb() {
     const total = grupo.length;
     const numeros = grupo
       .filter(g => g.temporada && g.numero)
-      .map(g => `T${g.temporada}E${g.numero}`);
+      .map(g => `T${g.temporada}E${String(g.numero).padStart(2, '0')}`);
 
-    let episodioTexto = 'Nuevo episodio';
-    let badge = 'Capítulo';
+    let episodioTexto, badge;
 
     if (total >= 3) {
-      episodioTexto = total === 1
-        ? 'Estreno'
-        : `Temporada completa · ${total} episodios`;
+      episodioTexto = `Temporada completa · ${total} episodios`;
       badge = 'Temporada';
     } else if (total === 2) {
-      episodioTexto = `${numeros.join(' · ')}`;
+      episodioTexto = numeros.join(' · ');
       badge = 'Estreno doble';
-    } else if (numeros.length === 1) {
-      episodioTexto = numeros[0];
+    } else {
+      episodioTexto = numeros[0] || 'Nuevo episodio';
       badge = 'Capítulo';
     }
 
@@ -608,25 +556,17 @@ async function cargarAgendaTVMazeWeb() {
       tipo: 'tv',
       titulo: base.titulo,
       episodio: episodioTexto,
-      episodio_titulo: total === 1 ? (base.episodioTitulo || '') : `${total} episodios el mismo día`,
+      episodio_titulo: total === 1 ? (base.episodioTitulo || '') : `${total} episodios`,
       fecha: base.fecha,
       hora: base.hora,
       imagen: base.imagen,
-      poster: base.poster,
+      poster: base.imagen,
       resumen: base.resumen,
       plataformas: base.plataformas,
       canal: base.canal,
-      badge,
-      totalEpisodios: total,
-      runtime: base.runtime,
-      language: base.language,
-      genres: base.genres,
-      status: base.status,
-      officialSite: base.officialSite
+      badge
     };
   });
-
-  return itemsAgrupados;
 }
 
 async function cargarAgenda(reset = false) {
@@ -662,7 +602,6 @@ async function cargarAgenda(reset = false) {
 
     let items = await cargarAgendaTVMazeWeb();
     items = items.filter(item => itemTienePlataforma(item, filtrosAgenda.plataforma));
-
     items.sort((a, b) => {
       const fa = parseSafeDate(a.fecha) || new Date('9999-12-31');
       const fb = parseSafeDate(b.fecha) || new Date('9999-12-31');
@@ -671,7 +610,6 @@ async function cargarAgenda(reset = false) {
     });
 
     todosLosItemsAgenda = items;
-
     localStorage.setItem(CACHE_KEY, JSON.stringify({
       timestamp: Date.now(),
       filtroFecha: filtrosAgenda.fecha,
@@ -693,15 +631,11 @@ async function cargarAgenda(reset = false) {
 
 function renderAgendaPlataformas(plataformas = []) {
   if (!plataformas.length) return '<div class="agenda-plataformas"><span class="agenda-plataforma-empty">N/D</span></div>';
-
   let html = '<div class="agenda-plataformas">';
   plataformas.slice(0, 5).forEach(p => {
     const logo = providerLogoUrl(p) || obtenerLogoCanal(p.provider_name || '');
-    if (logo) {
-      html += `<img src="${logo}" alt="${escapeHtml(p.provider_name || '')}" title="${escapeHtml(p.provider_name || '')}" class="agenda-platform-logo">`;
-    } else {
-      html += `<span class="agenda-platform-text">${escapeHtml((p.provider_name || '?').substring(0,2))}</span>`;
-    }
+    if (logo) html += `<img src="${logo}" alt="${escapeHtml(p.provider_name || '')}" title="${escapeHtml(p.provider_name || '')}" class="agenda-platform-logo">`;
+    else html += `<span class="agenda-platform-text">${escapeHtml(p.provider_name?.substring(0, 12) || '?')}</span>`;
   });
   html += '</div>';
   return html;
@@ -734,12 +668,10 @@ function renderAgendaLote(reset = false) {
   container.innerHTML = '';
   const fechas = Object.keys(agrupado).sort();
 
-  stats.innerHTML = `📺 ${todosLosItemsAgenda.length} resultados · ${PLATFORM_LABELS[filtrosAgenda.plataforma] || 'Todas'}`;
+  stats.innerHTML = `📺 ${todosLosItemsAgenda.length} resultados · ${PLATFORM_LABELS[filtrosAgenda.plataforma] || 'Todas las plataformas'}`;
 
-  const hoy = new Date();
-  hoy.setHours(0,0,0,0);
-  const manana = new Date(hoy);
-  manana.setDate(manana.getDate() + 1);
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  const manana = new Date(hoy); manana.setDate(manana.getDate() + 1);
 
   fechas.forEach(fecha => {
     const lista = agrupado[fecha];
@@ -771,27 +703,24 @@ function renderAgendaLote(reset = false) {
       const episodio = item.episodio || 'Nuevo episodio';
       const epiTitulo = item.episodio_titulo ? `<div class="agenda-ep-titulo">${escapeHtml(item.episodio_titulo)}</div>` : '';
       const plataformasHTML = renderAgendaPlataformas(item.plataformas || []);
-      const badgeText = item.badge || 'Capítulo';
-      const badgeClass =
-        badgeText === 'Temporada' ? 'nueva' :
-        badgeText === 'Estreno doble' ? 'estreno' :
-        'episodio';
+      const badgeClass = item.badge === 'Temporada' ? 'nueva' : item.badge === 'Estreno doble' ? 'estreno' : 'episodio';
 
       card.innerHTML = `
         <div class="agenda-poster-wrap">
-          ${poster ? `<img src="${poster}" alt="${escapeHtml(titulo)}" class="agenda-poster">` : `<div class="agenda-poster agenda-poster-fallback">🎬</div>`}
+          ${poster
+            ? `<img src="${poster}" alt="${escapeHtml(titulo)}" class="agenda-poster" onerror="this.parentElement.innerHTML='<div class=\\'agenda-poster agenda-poster-fallback\\'>🎬</div>'">`
+            : `<div class="agenda-poster agenda-poster-fallback">🎬</div>`}
         </div>
         <div class="agenda-info">
           <div class="agenda-topline">
             <h4 class="agenda-titulo">${escapeHtml(titulo)}</h4>
-            <span class="agenda-badge agenda-badge-${badgeClass}">${escapeHtml(badgeText)}</span>
+            <span class="agenda-badge agenda-badge-${badgeClass}">${escapeHtml(item.badge || 'Capítulo')}</span>
           </div>
           <div class="agenda-episodio">${escapeHtml(episodio)}</div>
           ${epiTitulo}
           <div class="agenda-meta">
             <span>🕒 ${escapeHtml(item.hora || '--:--')}</span>
-            <span>🌍 Web global</span>
-            ${item.language ? `<span>🗣️ ${escapeHtml(item.language)}</span>` : ''}
+            <span>📡 ${escapeHtml(item.canal || 'Web')}</span>
           </div>
           ${plataformasHTML}
           <p class="agenda-resumen">${resumen}</p>
@@ -826,10 +755,8 @@ function cargarMasAgenda() {
 async function abrirModalTVMaze(showId) {
   try {
     mostrarLoader('modal-content');
-
     const res = await fetch(`${TVMAZE_BASE}/shows/${showId}`);
     const show = await res.json();
-
     const providerName = show.webChannel?.name || show.network?.name || 'Streaming';
 
     const item = {
@@ -840,23 +767,18 @@ async function abrirModalTVMaze(showId) {
       vote_average: show.rating?.average || 0,
       fecha: show.premiered || '',
       tipo: 'tv',
-      plataformas: [{
-        provider_name: providerName,
-        provider_code: normalizarProveedor(providerName)
-      }]
+      plataformas: [{ provider_name: providerName, provider_code: normalizarProveedor(providerName) }]
     };
-
     ocultarLoader('modal-content');
     abrirModal(item);
   } catch (e) {
-    console.error('Error detalle TVmaze:', e);
     ocultarLoader('modal-content');
     mostrarNotificacion('❌ Error cargando detalles', 'error');
   }
 }
 
 // ============================================
-// DETALLES TMDB GENERALES
+// MODAL TMDB
 // ============================================
 async function verDetalleTmdb(id, tipo = 'tv') {
   try {
@@ -865,7 +787,6 @@ async function verDetalleTmdb(id, tipo = 'tv') {
       fetch(`${BASEURL}${tipo}/${id}?api_key=${APIKEY}&language=es-ES`),
       fetch(`${BASEURL}${tipo}/${id}/watch/providers?api_key=${APIKEY}`)
     ]);
-
     const detalle = await resDetalle.json();
     const prov = await resProv.json();
 
@@ -880,7 +801,6 @@ async function verDetalleTmdb(id, tipo = 'tv') {
       tipo,
       plataformas: prov.results?.ES?.flatrate || []
     };
-
     ocultarLoader('modal-content');
     abrirModal(item);
   } catch (e) {
@@ -891,7 +811,6 @@ async function verDetalleTmdb(id, tipo = 'tv') {
 
 function abrirModal(item) {
   itemActual = item;
-
   const titulo = item.titulo || item.title || item.name || 'Sin título';
   const descripcion = item.overview || 'Sin descripción';
   const fecha = item.fecha || item.release_date || item.first_air_date || '';
@@ -940,35 +859,29 @@ function cerrarModal() {
 function dibujarEstrellas(item) {
   const container = document.getElementById('estrellasSerie');
   container.innerHTML = '<h3 style="margin:10px 0;">Tu puntuación:</h3>';
-
   for (let i = 1; i <= 5; i++) {
     const star = document.createElement('span');
     star.classList.add('star');
     star.innerHTML = '⭐';
     star.onclick = () => puntuarSerie(item, i);
-
     const lista = JSON.parse(localStorage.getItem('miLista') || '[]');
     const s = lista.find(x => x.id == (item.tmdb_id || item.id));
     if (s && s.miPuntuacion >= i) star.classList.add('active');
-
     container.appendChild(star);
   }
 }
 
 function puntuarSerie(item, p) {
   let lista = JSON.parse(localStorage.getItem('miLista') || '[]');
-
   const itemParaGuardar = {
     id: item.tmdb_id || item.id,
     title: item.titulo || item.title || item.name,
     poster_path: item.poster || item.poster_path,
     miPuntuacion: p
   };
-
   let s = lista.find(x => x.id == itemParaGuardar.id);
   if (!s) lista.push(itemParaGuardar);
   else s.miPuntuacion = p;
-
   localStorage.setItem('miLista', JSON.stringify(lista));
   dibujarEstrellas(item);
   mostrarNotificacion('✅ Puntuación guardada', 'success');
@@ -976,7 +889,6 @@ function puntuarSerie(item, p) {
 
 function agregarMiLista() {
   let lista = JSON.parse(localStorage.getItem('miLista') || '[]');
-
   const itemParaGuardar = {
     id: itemActual.tmdb_id || itemActual.id,
     title: itemActual.titulo || itemActual.title || itemActual.name,
@@ -985,7 +897,6 @@ function agregarMiLista() {
     release_date: itemActual.fecha || itemActual.release_date || itemActual.first_air_date || '',
     miPuntuacion: 0
   };
-
   if (!lista.find(i => i.id == itemParaGuardar.id)) {
     lista.push(itemParaGuardar);
     localStorage.setItem('miLista', JSON.stringify(lista));
@@ -999,19 +910,15 @@ async function cargarMiLista() {
   const lista = JSON.parse(localStorage.getItem('miLista') || '[]');
   const container = document.getElementById('miLista');
   container.innerHTML = '';
-
   if (!lista.length) {
-    container.innerHTML = '<p style="text-align:center;padding:2rem;">Tu lista está vacía</p>';
+    container.innerHTML = '<p style="text-align:center;padding:2rem;grid-column:1/-1">Tu lista está vacía</p>';
     return;
   }
-
   lista.forEach(item => {
     if (!item.poster_path) return;
-
     const poster = item.poster_path.startsWith('http')
       ? item.poster_path
       : `https://image.tmdb.org/t/p/w300${item.poster_path}`;
-
     const div = document.createElement('div');
     div.classList.add('card');
     div.innerHTML = `
@@ -1021,18 +928,16 @@ async function cargarMiLista() {
       <p>📅 ${formatDate(item.release_date)}</p>
       <button class="btn-eliminar" onclick="eliminarDeMiLista('${item.id}', event)">🗑️ Eliminar</button>
     `;
-
     div.addEventListener('click', e => {
       if (!e.target.classList.contains('btn-eliminar')) abrirModal(item);
     });
-
     container.appendChild(div);
   });
 }
 
 function eliminarDeMiLista(id, event) {
   event.stopPropagation();
-  if (confirm('¿Seguro que quieres eliminar este item de tu lista?')) {
+  if (confirm('¿Seguro que quieres eliminar este item?')) {
     let lista = JSON.parse(localStorage.getItem('miLista') || '[]');
     lista = lista.filter(item => item.id != id);
     localStorage.setItem('miLista', JSON.stringify(lista));
@@ -1046,13 +951,11 @@ function eliminarDeMiLista(id, event) {
 // ============================================
 function guardarRecordatorio() {
   let recordatorios = JSON.parse(localStorage.getItem('recordatorios') || '[]');
-
   const itemParaGuardar = {
     id: itemActual.tmdb_id || itemActual.id,
     title: itemActual.titulo || itemActual.title || itemActual.name,
     fecha: itemActual.fecha || itemActual.release_date || itemActual.first_air_date || getDateISO(new Date())
   };
-
   if (!recordatorios.find(i => i.id == itemParaGuardar.id)) {
     recordatorios.push(itemParaGuardar);
     localStorage.setItem('recordatorios', JSON.stringify(recordatorios));
@@ -1065,11 +968,8 @@ function guardarRecordatorio() {
 function comprobarRecordatorios() {
   const recordatorios = JSON.parse(localStorage.getItem('recordatorios') || '[]');
   const hoy = getDateISO(new Date());
-
   recordatorios.forEach(item => {
-    if (item.fecha === hoy) {
-      mostrarNotificacion(`📢 ¡HOY se estrena ${item.title}!`, 'info');
-    }
+    if (item.fecha === hoy) mostrarNotificacion(`📢 ¡HOY se estrena ${item.title}!`, 'info');
   });
 }
 
@@ -1079,7 +979,6 @@ function comprobarRecordatorios() {
 async function buscar(mas = false) {
   const input = document.getElementById('searchInput');
   if (!input) return;
-
   const query = input.value.trim();
   const tipo = document.getElementById('tipo').value;
 
@@ -1099,33 +998,26 @@ async function buscar(mas = false) {
 
   try {
     let url;
-    if (tipo === 'multi') {
-      url = `${BASEURL}search/multi?api_key=${APIKEY}&language=es-ES&query=${encodeURIComponent(query)}&page=${busquedaPage}`;
-    } else {
-      url = `${BASEURL}search/${tipo}?api_key=${APIKEY}&language=es-ES&query=${encodeURIComponent(query)}&page=${busquedaPage}`;
-    }
+    if (tipo === 'multi') url = `${BASEURL}search/multi?api_key=${APIKEY}&language=es-ES&query=${encodeURIComponent(query)}&page=${busquedaPage}`;
+    else url = `${BASEURL}search/${tipo}?api_key=${APIKEY}&language=es-ES&query=${encodeURIComponent(query)}&page=${busquedaPage}`;
 
     const res = await fetch(url);
     const data = await res.json();
-
     const itemsFiltrados = (data.results || []).filter(item => item.media_type !== 'person');
-    const itemsConPlataformas = await Promise.all(
-      itemsFiltrados.map(item => enriquecerConPlataformasTMDb(item, item.media_type === 'movie' || item.title ? 'movie' : 'tv'))
+    const items = await Promise.all(
+      itemsFiltrados.map(i => enriquecerConPlataformasTMDb(i, i.media_type === 'movie' || i.title ? 'movie' : 'tv'))
     );
 
     ocultarLoader('contenedorBuscar');
-
-    if (!itemsConPlataformas.length && busquedaPage === 1) {
+    if (!items.length && busquedaPage === 1) {
       document.getElementById('contenedorBuscar').innerHTML = '<p style="text-align:center;padding:2rem;">No hay resultados</p>';
     } else {
-      if (mas) agregarResultadosConLogos(itemsConPlataformas, 'contenedorBuscar');
-      else mostrarResultadosConLogos(itemsConPlataformas, 'contenedorBuscar');
+      if (mas) agregarResultadosConLogos(items, 'contenedorBuscar');
+      else mostrarResultadosConLogos(items, 'contenedorBuscar');
     }
-
     busquedaPage++;
   } catch (e) {
     ocultarLoader('contenedorBuscar');
-    console.error('Error búsqueda:', e);
     mostrarNotificacion('❌ Error en la búsqueda', 'error');
   }
 }
@@ -1135,15 +1027,13 @@ async function buscar(mas = false) {
 // ============================================
 async function verTrailer() {
   if (!itemActual) return;
-
   const id = itemActual.tmdb_id || itemActual.id;
-  const tipo = itemActual.tipo === 'movie' || itemActual.tipo === 'pelicula' || itemActual.title ? 'movie' : 'tv';
+  const tipo = itemActual.tipo === 'movie' || itemActual.title ? 'movie' : 'tv';
 
   try {
     const res = await fetch(`${BASEURL}${tipo}/${id}/videos?api_key=${APIKEY}&language=es-ES`);
     const data = await res.json();
     const trailer = (data.results || []).find(v => v.type === 'Trailer' && v.site === 'YouTube');
-
     if (trailer) {
       document.getElementById('trailerContainer').innerHTML = `
         <iframe width="100%" height="315" src="https://www.youtube.com/embed/${trailer.key}" frameborder="0" allowfullscreen></iframe>
@@ -1152,7 +1042,6 @@ async function verTrailer() {
       mostrarNotificacion('❌ No hay trailer disponible', 'error');
     }
   } catch (e) {
-    console.error('Error trailer:', e);
     mostrarNotificacion('❌ Error cargando trailer', 'error');
   }
 }
@@ -1161,12 +1050,9 @@ async function verTrailer() {
 // FILTROS AGENDA
 // ============================================
 function aplicarFiltrosAgenda() {
-  const selectFecha = document.getElementById('filtroFechaAgenda');
-  const selectPlataforma = document.getElementById('filtroPlataformaAgenda');
-
-  filtrosAgenda.fecha = selectFecha?.value || 'month';
-  filtrosAgenda.plataforma = selectPlataforma?.value || 'all';
-
+  filtrosAgenda.fecha = document.getElementById('filtroFechaAgenda')?.value || 'month';
+  filtrosAgenda.plataforma = document.getElementById('filtroPlataformaAgenda')?.value || 'all';
+  localStorage.removeItem(CACHE_KEY);
   todosLosItemsAgenda = [];
   agendaItemsVisibles = 0;
   cargarAgenda(true);
@@ -1176,12 +1062,10 @@ function aplicarFiltrosAgenda() {
 // EXPORT / IMPORT / PERFIL / UI
 // ============================================
 function exportarLista() {
-  const lista = localStorage.getItem('miLista') || '[]';
-  const blob = new Blob([lista], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
+  const blob = new Blob([localStorage.getItem('miLista') || '[]'], { type: 'application/json' });
   const a = document.createElement('a');
-  a.href = url;
-  a.download = `seriestopia-lista-${getDateISO(new Date())}.json`;
+  a.href = URL.createObjectURL(blob);
+  a.download = `seriestopia-lista-${getDateISO()}.json`;
   a.click();
   mostrarNotificacion('✅ Lista exportada', 'success');
 }
@@ -1195,7 +1079,6 @@ function importarLista(event) {
       const lista = JSON.parse(e.target.result);
       localStorage.setItem('miLista', JSON.stringify(lista));
       mostrarNotificacion('✅ Lista importada', 'success');
-      if (document.getElementById('miLista').style.display === 'grid') cargarMiLista();
     } catch {
       mostrarNotificacion('❌ Archivo inválido', 'error');
     }
@@ -1204,34 +1087,26 @@ function importarLista(event) {
 }
 
 function exportarAlertas() {
-  const alertas = localStorage.getItem('recordatorios') || '[]';
-  const blob = new Blob([alertas], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
+  const blob = new Blob([localStorage.getItem('recordatorios') || '[]'], { type: 'application/json' });
   const a = document.createElement('a');
-  a.href = url;
-  a.download = `seriestopia-alertas-${getDateISO(new Date())}.json`;
+  a.href = URL.createObjectURL(blob);
+  a.download = `seriestopia-alertas-${getDateISO()}.json`;
   a.click();
   mostrarNotificacion('✅ Alertas exportadas', 'success');
 }
 
 async function compartirLista() {
-  const alias = prompt("Elige un alias para compartir tu lista (ej: pepito):");
+  const alias = prompt("Elige un alias para compartir tu lista:");
   if (!alias) return;
-
   const lista = JSON.parse(localStorage.getItem('miLista') || '[]');
-  if (!lista.length) {
-    mostrarNotificacion('❌ Tu lista está vacía', 'error');
-    return;
-  }
-
+  if (!lista.length) { mostrarNotificacion('❌ Tu lista está vacía', 'error'); return; }
   const data = { alias, lista, fecha: new Date().toISOString() };
   const compressed = btoa(encodeURIComponent(JSON.stringify(data)));
   const urlLarga = `https://seriestopia.vercel.app/?data=${compressed}`;
-
   try {
     const res = await fetch(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(urlLarga)}`);
     const urlCorta = await res.text();
-    if (urlCorta.includes('error')) throw new Error('Error');
+    if (urlCorta.includes('error')) throw new Error();
     await navigator.clipboard.writeText(urlCorta);
     mostrarNotificacion('✅ URL copiada', 'success');
   } catch {
@@ -1239,22 +1114,19 @@ async function compartirLista() {
       await navigator.clipboard.writeText(urlLarga);
       mostrarNotificacion('✅ URL copiada', 'success');
     } catch {
-      prompt('Copia esta URL manualmente:', urlLarga);
+      prompt('Copia esta URL:', urlLarga);
     }
   }
 }
 
 function cargarListaDesdeURL() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const dataCompressed = urlParams.get('data');
+  const dataCompressed = new URLSearchParams(window.location.search).get('data');
   if (!dataCompressed) return;
-
   try {
     const data = JSON.parse(decodeURIComponent(atob(dataCompressed)));
-    if (confirm(`¿Quieres cargar la lista de ${data.alias}? (Contiene ${data.lista.length} items)`)) {
+    if (confirm(`¿Cargar la lista de ${data.alias}? (${data.lista.length} items)`)) {
       localStorage.setItem('miLista', JSON.stringify(data.lista));
       mostrarNotificacion(`✅ Lista de ${data.alias} cargada`, 'success');
-      if (document.getElementById('miLista').style.display === 'grid') cargarMiLista();
       window.history.replaceState({}, document.title, '/');
     }
   } catch {
@@ -1264,10 +1136,7 @@ function cargarListaDesdeURL() {
 
 function guardarAlias() {
   const alias = document.getElementById('aliasInput')?.value.trim();
-  if (!alias) {
-    mostrarNotificacion('❌ Escribe un alias', 'error');
-    return;
-  }
+  if (!alias) { mostrarNotificacion('❌ Escribe un alias', 'error'); return; }
   aliasActual = alias;
   localStorage.setItem('alias', alias);
   actualizarDisplayAlias();
@@ -1276,40 +1145,35 @@ function guardarAlias() {
 }
 
 function actualizarDisplayAlias() {
-  const display = document.getElementById('aliasActualDisplay');
-  if (display) display.textContent = aliasActual || 'No tienes alias configurado';
+  const d = document.getElementById('aliasActualDisplay');
+  if (d) d.textContent = aliasActual || 'No tienes alias configurado';
 }
 
 function actualizarEnlacePerfil() {
-  const enlace = document.getElementById('enlaceCompartir');
-  if (enlace) enlace.value = aliasActual ? `https://seriestopia.vercel.app/?perfil=${aliasActual}` : 'https://seriestopia.vercel.app/';
+  const e = document.getElementById('enlaceCompartir');
+  if (e) e.value = aliasActual ? `https://seriestopia.vercel.app/?perfil=${aliasActual}` : 'https://seriestopia.vercel.app/';
 }
 
 function copiarEnlacePerfil() {
-  const enlace = document.getElementById('enlaceCompartir');
-  if (!enlace) return;
-  enlace.select();
-  navigator.clipboard.writeText(enlace.value)
+  const e = document.getElementById('enlaceCompartir');
+  if (!e) return;
+  e.select();
+  navigator.clipboard.writeText(e.value)
     .then(() => mostrarNotificacion('✅ Enlace copiado', 'success'))
     .catch(() => mostrarNotificacion('❌ Error al copiar', 'error'));
 }
 
 function actualizarStatsPerfil() {
   const lista = JSON.parse(localStorage.getItem('miLista') || '[]');
-  const recordatorios = JSON.parse(localStorage.getItem('recordatorios') || '[]');
-  const puntuadas = lista.filter(item => item.miPuntuacion > 0).length;
-
+  const rec = JSON.parse(localStorage.getItem('recordatorios') || '[]');
   document.getElementById('statsMiLista').textContent = lista.length;
-  document.getElementById('statsRecordatorios').textContent = recordatorios.length;
-  document.getElementById('statsPuntuadas').textContent = puntuadas;
+  document.getElementById('statsRecordatorios').textContent = rec.length;
+  document.getElementById('statsPuntuadas').textContent = lista.filter(i => i.miPuntuacion > 0).length;
 }
 
 function suscribirNewsletter() {
   const email = document.getElementById('newsletterEmail')?.value;
-  if (!email || !email.includes('@')) {
-    mostrarNotificacion('❌ Email inválido', 'error');
-    return;
-  }
+  if (!email || !email.includes('@')) { mostrarNotificacion('❌ Email inválido', 'error'); return; }
   mostrarNotificacion('✅ ¡Gracias por suscribirte!', 'success');
   document.getElementById('newsletterEmail').value = '';
 }
@@ -1317,18 +1181,17 @@ function suscribirNewsletter() {
 function actualizarBotonesActivos(seccion, activo) {
   if (seccion === 'tendencias') {
     document.querySelectorAll('#tendencias .filtro-btn').forEach(btn => btn.classList.remove('active'));
-    if (activo === 'tv') document.getElementById('filtroTendenciasTv')?.classList.add('active');
-    else document.getElementById('filtroTendenciasMovie')?.classList.add('active');
+    document.getElementById(activo === 'tv' ? 'filtroTendenciasTv' : 'filtroTendenciasMovie')?.classList.add('active');
   }
 }
 
 function mostrarLoader(containerId) {
-  const container = document.getElementById(containerId);
-  if (!container || container.querySelector('.loader')) return;
-  const loader = document.createElement('div');
-  loader.className = 'loader';
-  loader.innerHTML = '🔄 Cargando...';
-  container.appendChild(loader);
+  const c = document.getElementById(containerId);
+  if (!c || c.querySelector('.loader')) return;
+  const l = document.createElement('div');
+  l.className = 'loader';
+  l.innerHTML = '🔄 Cargando...';
+  c.appendChild(l);
 }
 
 function ocultarLoader(containerId) {
@@ -1336,9 +1199,9 @@ function ocultarLoader(containerId) {
 }
 
 function mostrarNotificacion(mensaje, tipo = 'info') {
-  const toast = document.createElement('div');
-  toast.className = `toast toast-${tipo}`;
-  toast.textContent = mensaje;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+  const t = document.createElement('div');
+  t.className = `toast toast-${tipo}`;
+  t.textContent = mensaje;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
 }
