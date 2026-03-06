@@ -9,6 +9,8 @@
   --text-muted: #b0b0b0;
   --gold: #ffd700;
   --cyan: #4ecdc4;
+  --green: #5ac85a;
+  --orange: #ff9f43;
   --border: rgba(255,255,255,0.12);
   --radius: 16px;
   --shadow: 0 8px 24px rgba(0,0,0,0.35);
@@ -73,7 +75,6 @@ nav button {
 nav button:hover {
   background: var(--primary);
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
 }
 
 .seccion {
@@ -197,11 +198,6 @@ select option {
   height: 235px;
   object-fit: cover;
   border-radius: 12px;
-  transition: transform 0.3s;
-}
-
-.card:hover img:first-child {
-  transform: scale(1.03);
 }
 
 .card h4 {
@@ -352,14 +348,6 @@ select option {
   padding: 4px;
 }
 
-.temporada {
-  background: rgba(255,255,255,0.05);
-  margin: 0.8rem 0;
-  padding: 1rem;
-  border-radius: 10px;
-  border-left: 3px solid var(--primary);
-}
-
 .star {
   cursor: pointer;
   font-size: 1.5rem;
@@ -370,7 +358,7 @@ select option {
   filter: drop-shadow(0 0 5px gold);
 }
 
-/* AGENDA NUEVA */
+/* AGENDA */
 #agendaContainer {
   display: block;
 }
@@ -451,13 +439,29 @@ select option {
 }
 
 .agenda-badge {
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.agenda-badge-episodio {
+  background: rgba(90, 200, 90, 0.16);
+  color: var(--green);
+  border: 1px solid rgba(90, 200, 90, 0.35);
+}
+
+.agenda-badge-estreno {
+  background: rgba(255, 159, 67, 0.16);
+  color: var(--orange);
+  border: 1px solid rgba(255, 159, 67, 0.35);
+}
+
+.agenda-badge-nueva {
   background: rgba(78, 205, 196, 0.18);
   color: var(--cyan);
   border: 1px solid rgba(78, 205, 196, 0.35);
-  border-radius: 999px;
-  padding: 0.2rem 0.6rem;
-  font-size: 0.72rem;
-  white-space: nowrap;
 }
 
 .agenda-episodio {
@@ -534,11 +538,6 @@ select option {
   color: white;
   cursor: pointer;
   font-weight: 700;
-}
-
-.agenda-btn:hover,
-.agenda-more-btn:hover {
-  background: var(--primary-dark);
 }
 
 .agenda-more {
