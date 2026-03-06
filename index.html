@@ -5,6 +5,92 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SERIESTOPIA - Tu guía de series y películas</title>
   <link rel="stylesheet" href="./style.css">
+  <style>
+    /* Estilos adicionales para la agenda */
+    .filtros-agenda {
+      grid-column: 1/-1;
+      margin-bottom: 2rem;
+      background: rgba(0,0,0,0.2);
+      padding: 1.5rem;
+      border-radius: 15px;
+    }
+    
+    .selector-fuente {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .fuente-btn {
+      padding: 1rem 2rem;
+      background: rgba(255,255,255,0.05);
+      border: 2px solid transparent;
+      color: white;
+      border-radius: 40px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+    
+    .fuente-btn:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: var(--primary);
+    }
+    
+    .fuente-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4);
+    }
+    
+    .filtros-secundarios {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .filtros-secundarios select {
+      padding: 0.8rem 2rem;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    
+    #agendaStats {
+      font-size: 1.1rem;
+      padding: 1rem;
+      background: rgba(255,255,255,0.1);
+      border-radius: 30px;
+      margin-top: 1rem;
+    }
+    
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 24px;
+      border-radius: 8px;
+      color: white;
+      z-index: 3000;
+      animation: slideUp 0.3s ease;
+    }
+    
+    .toast-success { background: #4caf50; }
+    .toast-error { background: #f44336; }
+    .toast-info { background: #2196f3; }
+    
+    @keyframes slideUp {
+      from { transform: translateY(100px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
 </head>
 <body>
 
@@ -24,13 +110,15 @@
 
 <!-- BUSCADOR -->
 <section id="buscar" class="seccion">
-  <input type="text" id="searchInput" placeholder="Buscar película o serie...">
-  <select id="tipo">
-    <option value="multi">Todo</option>
-    <option value="movie">Película</option>
-    <option value="tv">Serie</option>
-  </select>
-  <button onclick="buscar()">Buscar</button>
+  <div style="text-align:center; margin-bottom:2rem;">
+    <input type="text" id="searchInput" placeholder="Buscar película o serie..." style="padding:0.8rem 1.5rem; width:300px; max-width:80%; border-radius:30px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.1); color:white;">
+    <select id="tipo" style="padding:0.8rem 1.5rem; margin:0.5rem; border-radius:30px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.1); color:white;">
+      <option value="multi">Todo</option>
+      <option value="movie">Película</option>
+      <option value="tv">Serie</option>
+    </select>
+    <button onclick="buscar()" style="padding:0.8rem 2rem; background:var(--primary); border:none; border-radius:30px; color:white; cursor:pointer;">Buscar</button>
+  </div>
   <div id="contenedorBuscar" class="grid"></div>
 </section>
 
@@ -49,7 +137,7 @@
 <!-- SERIES -->
 <section id="series" class="seccion grid"></section>
 
-<!-- AGENDA HÍBRIDA -->
+<!-- AGENDA COMPLETA -->
 <section id="agenda" class="seccion">
   <div class="filtros-agenda">
     <div class="selector-fuente">
@@ -58,27 +146,14 @@
     </div>
     
     <div class="filtros-secundarios">
-      <select id="filtroTipoAgenda" onchange="aplicarFiltrosAgenda()">
-        <option value="all">Todos</option>
-        <option value="movie">Películas</option>
-        <option value="tv" selected>Series</option>
-      </select>
-      
       <select id="filtroFechaAgenda" onchange="aplicarFiltrosAgenda()">
-        <option value="all">Todos</option>
-        <option value="today">Hoy</option>
+        <option value="all">Completa (60 días)</option>
         <option value="week">Esta semana</option>
         <option value="month">Este mes</option>
       </select>
-      
-      <select id="ordenAgenda" onchange="aplicarFiltrosAgenda()">
-        <option value="fecha">Por fecha</option>
-        <option value="rating">Mejor valorados</option>
-        <option value="popularidad">Más populares</option>
-      </select>
     </div>
     
-    <div style="text-align:center; margin-top:10px;" id="agendaStats"></div>
+    <div id="agendaStats"></div>
   </div>
   <div id="agendaContainer"></div>
 </section>
@@ -87,7 +162,7 @@
 <section id="miLista" class="seccion grid"></section>
 
 <!-- PERFIL DE USUARIO -->
-<section id="perfil" class="seccion" style="display: none;">
+<section id="perfil" class="seccion">
   <div class="perfil-container">
     <h2>👤 Mi Perfil</h2>
     
@@ -183,7 +258,9 @@
   <div class="modal-content">
     <span id="cerrar" class="close">&times;</span>
     <div id="detalle"></div>
+    
     <div id="temporadasContainer"></div>
+    
     <div id="acciones">
       <button id="agregarLista">➕ Agregar a Mi Lista</button>
       <label>Puntuación:
@@ -199,6 +276,7 @@
       <button id="recordar">📌 Recordarme</button>
       <button id="verTrailer">🎥 Ver Trailer</button>
     </div>
+    
     <div id="trailerContainer"></div>
     <div id="plataformasContainer"></div>
     <div id="estrellasSerie"></div>
