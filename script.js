@@ -3,7 +3,6 @@
 // ============================================
 const APIKEY = 'bc2f8428b1238d724f9003cbf430ccee';
 const BASEURL = 'https://api.themoviedb.org/3/';
-const TVMAZE_BASE = 'https://api.tvmaze.com';
 
 // ============================================
 // VARIABLES GLOBALES
@@ -31,7 +30,6 @@ let filtrosAgenda = {
   plataforma: 'all'
 };
 
-const CACHE_KEY = 'agenda_tvmaze_v3';
 const CACHE_TIME = 60 * 30 * 1000;
 
 const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -83,6 +81,20 @@ const PLATFORM_LABELS = {
   paramountplus: 'Paramount+',
   peacock: 'Peacock',
   hulu: 'Hulu'
+};
+
+const PROVIDER_IDS = {
+  netflix: 8,
+  disneyplus: 337,
+  hbomax: 384,
+  primevideo: 119,
+  appletv: 350,
+  movistar: 149,
+  filmin: 63,
+  skyshowtime: 1773,
+  paramountplus: 531,
+  peacock: 386,
+  hulu: 15
 };
 
 // ============================================
@@ -150,7 +162,6 @@ function obtenerLogoCanal(nombre) {
     'netflix': 'netflix',
     'disney+': 'disneyplus',
     'disney plus': 'disneyplus',
-    'hbo': 'hbo',
     'hbo max': 'hbomax',
     'max': 'hbomax',
     'amazon prime video': 'primevideo',
@@ -186,14 +197,6 @@ function renderizarMiniPlataformas(plataformas = [], max = 4) {
   if (plataformas.length > max) html += `<span class="mas-plataformas">+${plataformas.length - max}</span>`;
   html += '</div>';
   return html;
-}
-
-function itemTienePlataforma(item, plataformaFiltro) {
-  if (plataformaFiltro === 'all') return true;
-  return (item.plataformas || []).some(p => {
-    const code = p.provider_code || normalizarProveedor(p.provider_name || '');
-    return code === plataformaFiltro;
-  });
 }
 
 // ============================================
@@ -311,13 +314,14 @@ async function cargarPeliculas(reset = false) {
   }
   mostrarLoader('peliculas');
 
-  let url;
   if (filtroPeliculas === 'lista') {
     const lista = JSON.parse(localStorage.getItem('miLista') || '[]');
     mostrarResultadosConLogos(lista.filter(i => i.title), 'peliculas');
     ocultarLoader('peliculas');
     return;
   }
+
+  let url;
   if (filtroPeliculas === 'latest') url = `${BASEURL}movie/now_playing?api_key=${APIKEY}&language=es-ES&page=${peliculasPage}`;
   if (filtroPeliculas === 'popular') url = `${BASEURL}movie/popular?api_key=${APIKEY}&language=es-ES&page=${peliculasPage}`;
   if (filtroPeliculas === 'top') url = `${BASEURL}movie/top_rated?api_key=${APIKEY}&language=es-ES&page=${peliculasPage}`;
@@ -346,13 +350,14 @@ async function cargarSeries(reset = false) {
   }
   mostrarLoader('series');
 
-  let url;
   if (filtroSeries === 'lista') {
     const lista = JSON.parse(localStorage.getItem('miLista') || '[]');
     mostrarResultadosConLogos(lista.filter(i => i.name), 'series');
     ocultarLoader('series');
     return;
   }
+
+  let url;
   if (filtroSeries === 'latest') url = `${BASEURL}tv/on_the_air?api_key=${APIKEY}&language=es-ES&page=${seriesPage}`;
   if (filtroSeries === 'popular') url = `${BASEURL}tv/popular?api_key=${APIKEY}&language=es-ES&page=${seriesPage}`;
   if (filtroSeries === 'top') url = `${BASEURL}tv/top_rated?api_key=${APIKEY}&language=es-ES&page=${seriesPage}`;
@@ -437,12 +442,10 @@ function mostrarResultadosConLogos(items, contenedorId) {
   const cont = document.getElementById(contenedorId);
   if (!cont) return;
   cont.innerHTML = '';
-
   if (!items.length) {
     cont.innerHTML = '<p style="text-align:center;padding:2rem;grid-column:1/-1">No hay resultados.</p>';
     return;
   }
-
   items.forEach(item => {
     const html = tarjetaItemHTML(item);
     if (!html) return;
@@ -469,104 +472,62 @@ function agregarResultadosConLogos(items, containerId) {
 }
 
 // ============================================
-// AGENDA TVMAZE
+// AGENDA TMDB
 // ============================================
-async function cargarAgendaTVMazeWeb() {
+async function cargarAgendaTMDB() {
   const { hoy, dias } = getRangoAgenda();
-  const fechas = [];
+  const fechaInicio = getDateISO(hoy);
+  const fechaFin = getDateISO(sumarDias(hoy, dias));
 
-  for (let i = 0; i < Math.min(dias, 14); i++) {
-    fechas.push(getDateISO(sumarDias(hoy, i)));
-  }
+  const plataformaFiltro = filtrosAgenda.plataforma;
+  const providerIds = plataformaFiltro !== 'all'
+    ? [PROVIDER_IDS[plataformaFiltro]].filter(Boolean)
+    : Object.values(PROVIDER_IDS);
 
-  const peticiones = fechas.map(async fecha => {
+  const providerParam = providerIds.join('|');
+
+  const [resES, resINT] = await Promise.all([
+    fetch(`${BASEURL}discover/tv?api_key=${APIKEY}&language=es-ES&watch_region=ES&with_watch_providers=${providerParam}&air_date.gte=${fechaInicio}&air_date.lte=${fechaFin}&sort_by=first_air_date.asc&page=1`),
+    fetch(`${BASEURL}discover/tv?api_key=${APIKEY}&language=es-ES&watch_region=US&with_watch_providers=${providerParam}&air_date.gte=${fechaInicio}&air_date.lte=${fechaFin}&sort_by=first_air_date.asc&page=1`)
+  ]);
+
+  const dataES = await resES.json();
+  const dataINT = await resINT.json();
+
+  const vistos = new Set();
+  const combinados = [...(dataES.results || []), ...(dataINT.results || [])].filter(item => {
+    if (vistos.has(item.id)) return false;
+    vistos.add(item.id);
+    return true;
+  });
+
+  const items = await Promise.all(combinados.map(async item => {
     try {
-      const res = await fetch(`${TVMAZE_BASE}/schedule/web?date=${fecha}&embed=show`);
-      const data = await res.json();
-      return { fecha, data: Array.isArray(data) ? data : [] };
+      const resProv = await fetch(`${BASEURL}tv/${item.id}/watch/providers?api_key=${APIKEY}`);
+      const dataProv = await resProv.json();
+      item.plataformas = (dataProv.results?.ES?.flatrate || []).map(p => ({
+        ...p,
+        provider_code: normalizarProveedor(p.provider_name || '')
+      }));
     } catch {
-      return { fecha, data: [] };
+      item.plataformas = [];
     }
-  });
-
-  const bloques = await Promise.all(peticiones);
-  const resultados = [];
-
-  bloques.forEach(({ fecha, data }) => {
-    data.forEach(ep => {
-      const show = ep._embedded?.show || ep.show || {};
-      if (!show || !show.id) return;
-
-      const providerName = show.webChannel?.name || show.network?.name || 'Streaming';
-      const providerCode = normalizarProveedor(providerName);
-
-      resultados.push({
-        episodioId: ep.id,
-        showId: show.id,
-        titulo: show.name || 'Sin título',
-        fecha: ep.airdate || fecha,
-        hora: ep.airtime?.substring(0, 5) || '--:--',
-        temporada: ep.season || 0,
-        numero: ep.number || 0,
-        episodioTitulo: ep.name || '',
-        resumen: limpiarHtml(show.summary || ep.summary || '').substring(0, 200),
-        imagen: show.image?.original || show.image?.medium || null,
-        plataformas: [{ provider_name: providerName, provider_code: providerCode }],
-        canal: providerName
-      });
-    });
-  });
-
-  // Agrupar por show + fecha
-  const agrupados = {};
-  resultados.forEach(item => {
-    const key = `${item.showId}-${item.fecha}`;
-    if (!agrupados[key]) agrupados[key] = [];
-    agrupados[key].push(item);
-  });
-
-  return Object.values(agrupados).map(grupo => {
-    grupo.sort((a, b) => {
-      if (a.temporada !== b.temporada) return a.temporada - b.temporada;
-      return a.numero - b.numero;
-    });
-
-    const base = grupo[0];
-    const total = grupo.length;
-    const numeros = grupo
-      .filter(g => g.temporada && g.numero)
-      .map(g => `T${g.temporada}E${String(g.numero).padStart(2, '0')}`);
-
-    let episodioTexto, badge;
-
-    if (total >= 3) {
-      episodioTexto = `Temporada completa · ${total} episodios`;
-      badge = 'Temporada';
-    } else if (total === 2) {
-      episodioTexto = numeros.join(' · ');
-      badge = 'Estreno doble';
-    } else {
-      episodioTexto = numeros[0] || 'Nuevo episodio';
-      badge = 'Capítulo';
-    }
-
     return {
-      id: `tvmaze-${base.showId}-${base.fecha}`,
-      show_id: base.showId,
+      id: `tmdb-${item.id}`,
+      show_id: item.id,
       tipo: 'tv',
-      titulo: base.titulo,
-      episodio: episodioTexto,
-      episodio_titulo: total === 1 ? (base.episodioTitulo || '') : `${total} episodios`,
-      fecha: base.fecha,
-      hora: base.hora,
-      imagen: base.imagen,
-      poster: base.imagen,
-      resumen: base.resumen,
-      plataformas: base.plataformas,
-      canal: base.canal,
-      badge
+      titulo: item.name || item.title || 'Sin título',
+      fecha: item.first_air_date || '',
+      imagen: item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : null,
+      poster: item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : null,
+      resumen: (item.overview || 'Sin descripción').substring(0, 200),
+      plataformas: item.plataformas,
+      vote_average: item.vote_average || 0,
+      badge: 'Estreno'
     };
-  });
+  }));
+
+  return items.filter(i => i.fecha);
 }
 
 async function cargarAgenda(reset = false) {
@@ -583,14 +544,11 @@ async function cargarAgenda(reset = false) {
   mostrarLoader('agendaContainer');
 
   try {
-    const cache = localStorage.getItem(CACHE_KEY);
+    const cacheKey = `agenda_tmdb_${filtrosAgenda.fecha}_${filtrosAgenda.plataforma}`;
+    const cache = localStorage.getItem(cacheKey);
     if (cache) {
       const parsed = JSON.parse(cache);
-      if (
-        Date.now() - parsed.timestamp < CACHE_TIME &&
-        parsed.filtroFecha === filtrosAgenda.fecha &&
-        parsed.filtroPlataforma === filtrosAgenda.plataforma
-      ) {
+      if (Date.now() - parsed.timestamp < CACHE_TIME) {
         todosLosItemsAgenda = parsed.data || [];
         ocultarLoader('agendaContainer');
         agendaItemsVisibles = 0;
@@ -600,20 +558,16 @@ async function cargarAgenda(reset = false) {
       }
     }
 
-    let items = await cargarAgendaTVMazeWeb();
-    items = items.filter(item => itemTienePlataforma(item, filtrosAgenda.plataforma));
+    let items = await cargarAgendaTMDB();
     items.sort((a, b) => {
       const fa = parseSafeDate(a.fecha) || new Date('9999-12-31');
       const fb = parseSafeDate(b.fecha) || new Date('9999-12-31');
-      if (+fa !== +fb) return fa - fb;
-      return (a.titulo || '').localeCompare(b.titulo || '');
+      return fa - fb;
     });
 
     todosLosItemsAgenda = items;
-    localStorage.setItem(CACHE_KEY, JSON.stringify({
+    localStorage.setItem(cacheKey, JSON.stringify({
       timestamp: Date.now(),
-      filtroFecha: filtrosAgenda.fecha,
-      filtroPlataforma: filtrosAgenda.plataforma,
       data: todosLosItemsAgenda
     }));
 
@@ -630,7 +584,7 @@ async function cargarAgenda(reset = false) {
 }
 
 function renderAgendaPlataformas(plataformas = []) {
-  if (!plataformas.length) return '<div class="agenda-plataformas"><span class="agenda-plataforma-empty">N/D</span></div>';
+  if (!plataformas.length) return '<div class="agenda-plataformas"><span class="agenda-plataforma-empty">No disponible</span></div>';
   let html = '<div class="agenda-plataformas">';
   plataformas.slice(0, 5).forEach(p => {
     const logo = providerLogoUrl(p) || obtenerLogoCanal(p.provider_name || '');
@@ -668,7 +622,7 @@ function renderAgendaLote(reset = false) {
   container.innerHTML = '';
   const fechas = Object.keys(agrupado).sort();
 
-  stats.innerHTML = `📺 ${todosLosItemsAgenda.length} resultados · ${PLATFORM_LABELS[filtrosAgenda.plataforma] || 'Todas las plataformas'}`;
+  stats.innerHTML = `📺 ${todosLosItemsAgenda.length} estrenos · ${PLATFORM_LABELS[filtrosAgenda.plataforma] || 'Todas las plataformas'}`;
 
   const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
   const manana = new Date(hoy); manana.setDate(manana.getDate() + 1);
@@ -690,7 +644,7 @@ function renderAgendaLote(reset = false) {
 
     const h3 = document.createElement('h3');
     h3.className = 'agenda-dia-titulo';
-    h3.innerHTML = `<span>${escapeHtml(etiqueta)}</span><small>${lista.length} resultado${lista.length !== 1 ? 's' : ''}</small>`;
+    h3.innerHTML = `<span>${escapeHtml(etiqueta)}</span><small>${lista.length} estreno${lista.length !== 1 ? 's' : ''}</small>`;
     bloque.appendChild(h3);
 
     lista.forEach(item => {
@@ -699,11 +653,9 @@ function renderAgendaLote(reset = false) {
 
       const titulo = item.titulo || 'Sin título';
       const poster = item.imagen || item.poster || '';
-      const resumen = item.resumen ? `${escapeHtml(item.resumen)}...` : 'Sin descripción.';
-      const episodio = item.episodio || 'Nuevo episodio';
-      const epiTitulo = item.episodio_titulo ? `<div class="agenda-ep-titulo">${escapeHtml(item.episodio_titulo)}</div>` : '';
+      const resumen = item.resumen || 'Sin descripción.';
       const plataformasHTML = renderAgendaPlataformas(item.plataformas || []);
-      const badgeClass = item.badge === 'Temporada' ? 'nueva' : item.badge === 'Estreno doble' ? 'estreno' : 'episodio';
+      const nota = item.vote_average ? Number(item.vote_average).toFixed(1) : 'N/A';
 
       card.innerHTML = `
         <div class="agenda-poster-wrap">
@@ -714,19 +666,17 @@ function renderAgendaLote(reset = false) {
         <div class="agenda-info">
           <div class="agenda-topline">
             <h4 class="agenda-titulo">${escapeHtml(titulo)}</h4>
-            <span class="agenda-badge agenda-badge-${badgeClass}">${escapeHtml(item.badge || 'Capítulo')}</span>
+            <span class="agenda-badge agenda-badge-estreno">Estreno</span>
           </div>
-          <div class="agenda-episodio">${escapeHtml(episodio)}</div>
-          ${epiTitulo}
           <div class="agenda-meta">
-            <span>🕒 ${escapeHtml(item.hora || '--:--')}</span>
-            <span>📡 ${escapeHtml(item.canal || 'Web')}</span>
+            <span>📅 ${formatDate(item.fecha)}</span>
+            <span>⭐ ${nota}</span>
           </div>
           ${plataformasHTML}
-          <p class="agenda-resumen">${resumen}</p>
+          <p class="agenda-resumen">${escapeHtml(resumen)}</p>
         </div>
         <div class="agenda-accion">
-          <button class="agenda-btn" onclick="abrirModalTVMaze(${item.show_id})">Ver</button>
+          <button class="agenda-btn" onclick="verDetalleTmdb(${item.show_id}, 'tv')">Ver</button>
         </div>
       `;
 
@@ -749,32 +699,12 @@ function cargarMasAgenda() {
   renderAgendaLote(true);
 }
 
-// ============================================
-// MODAL TVMAZE
-// ============================================
-async function abrirModalTVMaze(showId) {
-  try {
-    mostrarLoader('modal-content');
-    const res = await fetch(`${TVMAZE_BASE}/shows/${showId}`);
-    const show = await res.json();
-    const providerName = show.webChannel?.name || show.network?.name || 'Streaming';
-
-    const item = {
-      id: show.id,
-      titulo: show.name || 'Sin título',
-      overview: limpiarHtml(show.summary || '') || 'Sin descripción',
-      poster: show.image?.original || show.image?.medium || null,
-      vote_average: show.rating?.average || 0,
-      fecha: show.premiered || '',
-      tipo: 'tv',
-      plataformas: [{ provider_name: providerName, provider_code: normalizarProveedor(providerName) }]
-    };
-    ocultarLoader('modal-content');
-    abrirModal(item);
-  } catch (e) {
-    ocultarLoader('modal-content');
-    mostrarNotificacion('❌ Error cargando detalles', 'error');
-  }
+function aplicarFiltrosAgenda() {
+  filtrosAgenda.fecha = document.getElementById('filtroFechaAgenda')?.value || 'month';
+  filtrosAgenda.plataforma = document.getElementById('filtroPlataformaAgenda')?.value || 'all';
+  todosLosItemsAgenda = [];
+  agendaItemsVisibles = 0;
+  cargarAgenda(true);
 }
 
 // ============================================
@@ -799,7 +729,10 @@ async function verDetalleTmdb(id, tipo = 'tv') {
       vote_average: detalle.vote_average || 0,
       fecha: detalle.release_date || detalle.first_air_date || '',
       tipo,
-      plataformas: prov.results?.ES?.flatrate || []
+      plataformas: (prov.results?.ES?.flatrate || []).map(p => ({
+        ...p,
+        provider_code: normalizarProveedor(p.provider_name || '')
+      }))
     };
     ocultarLoader('modal-content');
     abrirModal(item);
@@ -828,7 +761,6 @@ function abrirModal(item) {
 
   const cont = document.getElementById('plataformasContainer');
   cont.innerHTML = '<h3>Disponible en:</h3>';
-
   const plataformas = item.plataformas || [];
   if (plataformas.length) {
     plataformas.forEach(p => {
@@ -1044,18 +976,6 @@ async function verTrailer() {
   } catch (e) {
     mostrarNotificacion('❌ Error cargando trailer', 'error');
   }
-}
-
-// ============================================
-// FILTROS AGENDA
-// ============================================
-function aplicarFiltrosAgenda() {
-  filtrosAgenda.fecha = document.getElementById('filtroFechaAgenda')?.value || 'month';
-  filtrosAgenda.plataforma = document.getElementById('filtroPlataformaAgenda')?.value || 'all';
-  localStorage.removeItem(CACHE_KEY);
-  todosLosItemsAgenda = [];
-  agendaItemsVisibles = 0;
-  cargarAgenda(true);
 }
 
 // ============================================
