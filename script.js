@@ -24,7 +24,7 @@ let todosLosItemsAgenda = [];
 let agendaItemsVisibles = 0;
 let agendaBatchSize = 24;
 let agendaScrollLock = false;
-let filtrosAgenda = { fecha: 'month', plataforma: 'all' };
+let filtrosAgenda = { fecha: 'week', plataforma: 'all' }; // CAMBIADO: week por defecto
 
 const CACHE_TIME = 3600000;
 const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -121,8 +121,8 @@ function sumarDias(fecha, dias) {
 function getRangoAgenda() {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
-  let dias = 30;
-  if (filtrosAgenda.fecha === 'week') dias = 7;
+  let dias = 7; // CAMBIADO: 7 por defecto (week)
+  if (filtrosAgenda.fecha === 'month') dias = 30;
   else if (filtrosAgenda.fecha === 'all') dias = 45;
   return { hoy, dias };
 }
@@ -163,13 +163,13 @@ function renderizarMiniPlataformas(plataformas = [], max = 4) {
 }
 
 // ============================================
-// INIT
+// INIT - CORREGIDO: Abre en TENDENCIAS
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
   cargarListaDesdeURL();
   cargarPeliculas(true);
   cargarSeries(true);
-  mostrarSeccion('series');
+  mostrarSeccion('tendencias'); // CAMBIADO: ahora abre en tendencias
   comprobarRecordatorios();
   actualizarDisplayAlias();
   actualizarEnlacePerfil();
@@ -242,9 +242,9 @@ function mostrarSeccion(id) {
     agendaItemsVisibles = 0;
     const sf = document.getElementById('filtroFechaAgenda');
     const sp = document.getElementById('filtroPlataformaAgenda');
-    if (sf) sf.value = 'month';
+    if (sf) sf.value = 'week'; // CAMBIADO: week por defecto
     if (sp) sp.value = 'all';
-    filtrosAgenda.fecha = 'month';
+    filtrosAgenda.fecha = 'week'; // CAMBIADO: week por defecto
     filtrosAgenda.plataforma = 'all';
     cargarAgenda(true);
   }
@@ -282,7 +282,7 @@ async function getPosterTMDB(titulo) {
 }
 
 // ============================================
-// PELÍCULAS
+// PELÍCULAS - CORREGIDO: Tamaño de carátulas
 // ============================================
 async function cargarPeliculas(reset = false) {
   if (reset) { peliculasPage = 1; document.getElementById('peliculas').innerHTML = ''; }
@@ -308,7 +308,7 @@ async function cargarPeliculas(reset = false) {
 }
 
 // ============================================
-// SERIES
+// SERIES - CORREGIDO: Tamaño de carátulas
 // ============================================
 async function cargarSeries(reset = false) {
   if (reset) { seriesPage = 1; document.getElementById('series').innerHTML = ''; }
@@ -334,7 +334,7 @@ async function cargarSeries(reset = false) {
 }
 
 // ============================================
-// TENDENCIAS
+// TENDENCIAS - CORREGIDO: Tamaño de carátulas
 // ============================================
 async function cargarTendencias(reset = false) {
   if (tendenciasCargando) return;
@@ -365,14 +365,14 @@ function cambiarTipoTendencias(tipo) {
 }
 
 // ============================================
-// TARJETAS
+// TARJETAS - CORREGIDO: Tamaño de carátulas
 // ============================================
 function tarjetaItemHTML(item) {
   const titulo = item.title || item.name || item.titulo || 'Sin título';
   const fecha = item.release_date || item.first_air_date || item.fecha || '';
   const poster = item.poster_path
-    ? `https://image.tmdb.org/t/p/w300${item.poster_path}`
-    : item.poster || item.imagen || 'https://via.placeholder.com/300x450?text=Sin+poster';
+    ? `https://image.tmdb.org/t/p/w200${item.poster_path}` // CAMBIADO: w200 en lugar de w300 para carátulas más pequeñas
+    : item.poster || item.imagen || 'https://via.placeholder.com/200x300?text=Sin+poster';
   const nota = item.vote_average ?? item.vote ?? 0;
   return `
     <img src="${poster}" loading="lazy" alt="${escapeHtml(titulo)}">
@@ -557,7 +557,7 @@ async function cargarAgenda(reset = false) {
       if (!episodios.length) return;
 
       const poster = serie.poster_path
-        ? `https://image.tmdb.org/t/p/w300${serie.poster_path}`
+        ? `https://image.tmdb.org/t/p/w200${serie.poster_path}` // CAMBIADO: w200 para carátulas más pequeñas
         : null;
 
       const providerName = AGENDA_PROVIDER_NAMES[serie._provider_id] || 'Streaming';
@@ -723,7 +723,7 @@ function cargarMasAgenda() {
 }
 
 function aplicarFiltrosAgenda() {
-  filtrosAgenda.fecha = document.getElementById('filtroFechaAgenda')?.value || 'month';
+  filtrosAgenda.fecha = document.getElementById('filtroFechaAgenda')?.value || 'week';
   filtrosAgenda.plataforma = document.getElementById('filtroPlataformaAgenda')?.value || 'all';
   Object.keys(localStorage).filter(k => k.startsWith('agenda_tmdb_v2')).forEach(k => localStorage.removeItem(k));
   todosLosItemsAgenda = [];
@@ -739,7 +739,7 @@ async function abrirModalAgenda(tmdbId) {
       id: show.id,
       titulo: show.name,
       overview: show.overview || '',
-      poster: show.poster_path ? `https://image.tmdb.org/t/p/w300${show.poster_path}` : null,
+      poster: show.poster_path ? `https://image.tmdb.org/t/p/w200${show.poster_path}` : null,
       poster_path: show.poster_path,
       vote_average: show.vote_average || 0,
       fecha: show.first_air_date || '',
@@ -788,10 +788,11 @@ function cerrarModal() {
   document.getElementById('modal').style.display = 'none';
   document.getElementById('trailerContainer').innerHTML = '';
   document.getElementById('temporadasContainer').innerHTML = '';
+  cerrarSelectorListas(); // Cerrar selector si está abierto
 }
 
 // ============================================
-// MÚLTIPLES LISTAS
+// MÚLTIPLES LISTAS - MEJORADO: Selector visual
 // ============================================
 function getListas() {
   const raw = localStorage.getItem('listas');
@@ -872,25 +873,126 @@ function toggleEnLista() {
   if (estaEnAlgunaLista(id)) {
     eliminarDeListaModal(id);
   } else {
-    agregarMiLista();
+    mostrarSelectorListas();
   }
 }
 
-function agregarMiLista() {
+// NUEVO: Selector visual de listas
+function mostrarSelectorListas() {
   const listas = getListas();
-  let listaId = 'default';
+  if (!listas.length) return;
   
-  if (listas.length > 1) {
-    const opciones = listas.map((l, i) => `${i + 1}. ${l.nombre} (${l.items.length} items)`).join('\n');
-    const resp = prompt(`¿A qué lista añadir?\n\n${opciones}\n\nEscribe el número:`);
-    const idx = parseInt(resp) - 1;
-    if (isNaN(idx) || idx < 0 || idx >= listas.length) return;
-    listaId = listas[idx].id;
-  } else {
-    listaId = listas[0].id;
-  }
+  // Crear overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+  `;
   
+  // Crear selector
+  const selector = document.createElement('div');
+  selector.className = 'lista-selector';
+  selector.style.cssText = `
+    background: linear-gradient(135deg, #0b1020 0%, #121a33 100%);
+    border: 2px solid #e74c3c;
+    border-radius: 20px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+  `;
+  
+  selector.innerHTML = `
+    <h2 style="color: #e74c3c; margin-bottom: 1.5rem; text-align: center;">Selecciona una lista</h2>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      ${listas.map(lista => `
+        <button class="lista-option" data-lista-id="${lista.id}" style="
+          background: rgba(255,255,255,0.1);
+          border: 1px solid rgba(255,255,255,0.2);
+          color: white;
+          padding: 1rem;
+          border-radius: 12px;
+          cursor: pointer;
+          font-size: 1rem;
+          text-align: left;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          transition: all 0.25s ease;
+          width: 100%;
+        ">
+          <span>📋 ${escapeHtml(lista.nombre)}</span>
+          <span style="color: #ffd700; font-size: 0.9rem;">${lista.items.length} items</span>
+        </button>
+      `).join('')}
+    </div>
+    <button class="cerrar-selector" style="
+      margin-top: 1.5rem;
+      background: transparent;
+      border: 1px solid #e74c3c;
+      color: white;
+      padding: 0.8rem;
+      border-radius: 12px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 1rem;
+      transition: all 0.25s ease;
+    ">Cancelar</button>
+  `;
+  
+  overlay.appendChild(selector);
+  document.body.appendChild(overlay);
+  
+  // Event listeners
+  selector.querySelectorAll('.lista-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const listaId = btn.dataset.listaId;
+      agregarAListaSeleccionada(listaId);
+      overlay.remove();
+    });
+    
+    btn.addEventListener('mouseenter', () => {
+      btn.style.background = 'rgba(231,76,60,0.2)';
+      btn.style.borderColor = '#e74c3c';
+    });
+    
+    btn.addEventListener('mouseleave', () => {
+      btn.style.background = 'rgba(255,255,255,0.1)';
+      btn.style.borderColor = 'rgba(255,255,255,0.2)';
+    });
+  });
+  
+  selector.querySelector('.cerrar-selector').addEventListener('click', () => {
+    overlay.remove();
+  });
+  
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+}
+
+function cerrarSelectorListas() {
+  document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
+}
+
+function agregarAListaSeleccionada(listaId) {
+  if (!itemActual) return;
+  
+  const listas = getListas();
   const lista = listas.find(l => l.id === listaId);
+  if (!lista) return;
+  
   const itemId = itemActual.tmdb_id || itemActual.id;
   
   if (lista.items.find(i => String(i.id) === String(itemId))) {
@@ -918,15 +1020,107 @@ function eliminarDeListaModal(itemId) {
   
   if (!enListas.length) return;
   
-  if (!confirm(`¿Eliminar de ${enListas.map(l => l.nombre).join(', ')}?`)) return;
-  
-  enListas.forEach(l => {
-    l.items = l.items.filter(i => String(i.id) !== String(itemId));
-  });
-  
-  guardarListas(listas);
-  mostrarNotificacion('✅ Eliminado de la lista', 'success');
-  actualizarBotonLista();
+  // Si está en varias listas, preguntar de cuál eliminar
+  if (enListas.length > 1) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 3000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(5px);
+    `;
+    
+    const selector = document.createElement('div');
+    selector.style.cssText = `
+      background: linear-gradient(135deg, #0b1020 0%, #121a33 100%);
+      border: 2px solid #f44336;
+      border-radius: 20px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+    `;
+    
+    selector.innerHTML = `
+      <h2 style="color: #f44336; margin-bottom: 1.5rem; text-align: center;">¿De qué lista quieres eliminarlo?</h2>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        ${enListas.map(l => `
+          <button class="eliminar-option" data-lista-id="${l.id}" style="
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.25s ease;
+            width: 100%;
+          ">
+            <span>📋 ${escapeHtml(l.nombre)}</span>
+            <span style="color: #ffd700; font-size: 0.9rem;">${l.items.length} items</span>
+          </button>
+        `).join('')}
+      </div>
+      <button class="cancelar-eliminar" style="
+        margin-top: 1.5rem;
+        background: transparent;
+        border: 1px solid #888;
+        color: white;
+        padding: 0.8rem;
+        border-radius: 12px;
+        cursor: pointer;
+        width: 100%;
+        font-size: 1rem;
+        transition: all 0.25s ease;
+      ">Cancelar</button>
+    `;
+    
+    overlay.appendChild(selector);
+    document.body.appendChild(overlay);
+    
+    selector.querySelectorAll('.eliminar-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const listaId = btn.dataset.listaId;
+        const lista = listas.find(l => l.id === listaId);
+        if (lista) {
+          lista.items = lista.items.filter(i => String(i.id) !== String(itemId));
+          guardarListas(listas);
+          mostrarNotificacion(`✅ Eliminado de "${lista.nombre}"`, 'success');
+        }
+        overlay.remove();
+        actualizarBotonLista();
+      });
+    });
+    
+    selector.querySelector('.cancelar-eliminar').addEventListener('click', () => {
+      overlay.remove();
+    });
+    
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.remove();
+    });
+    
+  } else {
+    // Si solo está en una lista, eliminar directamente
+    const lista = enListas[0];
+    if (confirm(`¿Eliminar de "${lista.nombre}"?`)) {
+      lista.items = lista.items.filter(i => String(i.id) !== String(itemId));
+      guardarListas(listas);
+      mostrarNotificacion('✅ Eliminado de la lista', 'success');
+      actualizarBotonLista();
+    }
+  }
 }
 
 async function cargarMiLista() {
@@ -940,7 +1134,7 @@ async function cargarMiLista() {
   header.style.cssText = 'grid-column:1/-1;display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:1rem;';
   header.innerHTML = `
     <h2 style="margin:0;flex:1">Mis Listas</h2>
-    <button class="btn-perfil" onclick="crearLista()" style="white-space:nowrap">➕ Nueva lista</button>`;
+    <button class="btn-crear-lista" onclick="crearLista()" style="white-space:nowrap">➕ Nueva lista</button>`;
   container.appendChild(header);
 
   listas.forEach(lista => {
@@ -948,11 +1142,13 @@ async function cargarMiLista() {
     seccion.style.cssText = 'grid-column:1/-1;margin-bottom:2rem;';
 
     const tituloBar = document.createElement('div');
-    tituloBar.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:1rem;padding:0.7rem 1rem;background:rgba(255,255,255,0.07);border-radius:10px;';
+    tituloBar.className = 'lista-titulo-bar';
     tituloBar.innerHTML = `
       <h3 style="margin:0;flex:1;font-size:1.1rem">📋 ${escapeHtml(lista.nombre)} <span style="color:#ffd700;font-size:0.85rem">(${lista.items.length})</span></h3>
-      <button class="btn-perfil" style="padding:4px 12px;font-size:0.8rem" onclick="renombrarLista('${lista.id}')">✏️</button>
-      <button class="btn-perfil" style="padding:4px 12px;font-size:0.8rem;background:#c0392b" onclick="eliminarLista('${lista.id}')">🗑️</button>`;
+      <div class="lista-acciones">
+        <button onclick="renombrarLista('${lista.id}')">✏️</button>
+        <button class="eliminar" onclick="eliminarLista('${lista.id}')">🗑️</button>
+      </div>`;
     seccion.appendChild(tituloBar);
 
     if (!lista.items.length) {
@@ -965,7 +1161,7 @@ async function cargarMiLista() {
       grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem;';
       lista.items.forEach(item => {
         if (!item.poster_path) return;
-        const poster = item.poster_path.startsWith('http') ? item.poster_path : `https://image.tmdb.org/t/p/w300${item.poster_path}`;
+        const poster = item.poster_path.startsWith('http') ? item.poster_path : `https://image.tmdb.org/t/p/w200${item.poster_path}`;
         const div = document.createElement('div');
         div.classList.add('card');
         div.innerHTML = `
