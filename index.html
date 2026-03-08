@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SERIESTOPIA - Tu guia de series y streaming</title>
-  <meta name="description" content="Agenda de estrenos y guia de series, peliculas y plataformas en streaming.">
+  <meta name="description" content="Agenda de estrenos, series, peliculas y recomendaciones personalizadas.">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -36,10 +36,24 @@
     </section>
 
     <!-- PELICULAS -->
-    <section id="peliculas" class="seccion"></section>
+    <section id="peliculas" class="seccion">
+      <div class="filtros-seccion" style="grid-column:1/-1">
+        <button class="filtro-btn active" onclick="cambiarFiltroPeliculas('latest',this)">En cines</button>
+        <button class="filtro-btn" onclick="cambiarFiltroPeliculas('popular',this)">Populares</button>
+        <button class="filtro-btn" onclick="cambiarFiltroPeliculas('upcoming',this)">Proximas</button>
+        <button class="filtro-btn" onclick="cambiarFiltroPeliculas('lista',this)">Mi lista</button>
+      </div>
+    </section>
 
     <!-- SERIES -->
-    <section id="series" class="seccion"></section>
+    <section id="series" class="seccion">
+      <div class="filtros-seccion" style="grid-column:1/-1">
+        <button class="filtro-btn active" onclick="cambiarFiltroSeries('latest',this)">Recientes</button>
+        <button class="filtro-btn" onclick="cambiarFiltroSeries('popular',this)">Populares</button>
+        <button class="filtro-btn" onclick="cambiarFiltroSeries('top',this)">Top Rated</button>
+        <button class="filtro-btn" onclick="cambiarFiltroSeries('lista',this)">Mi lista</button>
+      </div>
+    </section>
 
     <!-- AGENDA -->
     <section id="agenda" class="seccion">
@@ -71,29 +85,21 @@
     <!-- PARA TI -->
     <section id="parati" class="seccion">
       <div class="parati-container">
-
-        <!-- Onboarding / Preferencias -->
         <div id="paratiOnboarding" class="parati-onboarding" style="display:none">
           <h2>Personaliza tu experiencia</h2>
           <p class="parati-subtitle">Dinos que te gusta y te recomendaremos series y peliculas a tu medida</p>
-
           <h3>Generos favoritos</h3>
           <div class="generos-grid" id="generosGrid"></div>
-
           <h3>Plataformas que tienes</h3>
           <div class="plataformas-pref-grid" id="plataformasPrefGrid"></div>
-
           <h3>Que prefieres ver?</h3>
           <div class="tipo-pref-btns">
             <button class="tipo-pref-btn active" data-tipo="ambos" onclick="selTipo(this)">Todo</button>
             <button class="tipo-pref-btn" data-tipo="tv" onclick="selTipo(this)">Solo Series</button>
             <button class="tipo-pref-btn" data-tipo="movie" onclick="selTipo(this)">Solo Peliculas</button>
           </div>
-
           <button class="btn-guardar-pref" onclick="guardarPreferencias()">Ver mis recomendaciones</button>
         </div>
-
-        <!-- Resultados Para Ti -->
         <div id="paratiResultados" style="display:none">
           <div class="parati-header">
             <h2>Recomendado para ti</h2>
@@ -105,7 +111,6 @@
           </div>
           <div id="paratiContainer"></div>
         </div>
-
       </div>
     </section>
 
@@ -117,8 +122,6 @@
       <div class="perfil-container">
         <h2>Tu perfil</h2>
         <div class="perfil-card">
-
-          <!-- Avatar -->
           <div class="perfil-avatar">
             <div class="avatar-wrap">
               <span id="avatarEmoji" class="avatar-icon">&#128100;</span>
@@ -132,36 +135,28 @@
             </div>
             <div id="avatarEmojiSelector" class="avatar-emoji-selector"></div>
           </div>
-
           <div class="perfil-info">
-            <!-- Alias -->
             <h3>Alias</h3>
             <div id="aliasActualDisplay" class="alias-display">No tienes alias configurado</div>
             <div class="perfil-acciones">
               <input id="aliasInput" class="alias-input" type="text" placeholder="Escribe tu alias">
               <button class="btn-perfil" onclick="guardarAlias()">Guardar</button>
             </div>
-
-            <!-- Bio -->
             <h3>Bio</h3>
             <textarea id="bioInput" class="bio-input" maxlength="160" placeholder="Cuentanos algo sobre ti... (max 160 caracteres)"></textarea>
             <button class="btn-perfil" onclick="guardarBio()" style="margin-top:0.5rem">Guardar bio</button>
-
-            <!-- Stats -->
             <div class="perfil-stats">
               <p>Listas creadas: <span id="statsListas">0</span></p>
               <p>Items en total: <span id="statsMiLista">0</span></p>
               <p>Recordatorios: <span id="statsRecordatorios">0</span></p>
               <p>Series puntuadas: <span id="statsPuntuadas">0</span></p>
             </div>
-
-            <!-- Compartir -->
             <h3>Comparte tu perfil</h3>
             <div class="compartir-box">
               <input id="enlaceCompartir" class="enlace-input" type="text" readonly>
               <button class="btn-copiar" onclick="copiarEnlacePerfil()">Copiar</button>
             </div>
-            <button class="btn-compartir" onclick="compartirLista()">Compartir lista</button>
+            <button class="btn-compartir" onclick="compartirLista()">Compartir mi lista</button>
           </div>
         </div>
       </div>
@@ -184,15 +179,9 @@
       <div class="contacto-container">
         <h2>Contacto</h2>
         <div class="redes-sociales">
-          <a class="red-social" href="#" target="_blank" rel="noopener noreferrer">
-            <span class="icono">Twitter</span>
-          </a>
-          <a class="red-social" href="#" target="_blank" rel="noopener noreferrer">
-            <span class="icono">Instagram</span>
-          </a>
-          <a class="red-social" href="#" target="_blank" rel="noopener noreferrer">
-            <span class="icono">TikTok</span>
-          </a>
+          <a class="red-social" href="#" target="_blank" rel="noopener noreferrer"><span class="icono">Twitter</span></a>
+          <a class="red-social" href="#" target="_blank" rel="noopener noreferrer"><span class="icono">Instagram</span></a>
+          <a class="red-social" href="#" target="_blank" rel="noopener noreferrer"><span class="icono">TikTok</span></a>
         </div>
         <div class="contacto-info">
           <h3>Email</h3>
@@ -216,8 +205,7 @@
     <!-- EXPORT / IMPORT -->
     <div id="exportImport">
       <button onclick="exportarLista()">Exportar Listas</button>
-      <label for="importFile" class="fake-file-btn">Importar Lista</label>
-      <input id="importFile" type="file" accept=".json" onchange="importarLista(event)">
+      <label class="fake-file-btn">Importar Lista<input type="file" accept=".json" onchange="importarLista(event)" style="display:none"></label>
       <button onclick="exportarAlertas()">Exportar Alertas</button>
       <button onclick="compartirLista()">Compartir Lista</button>
     </div>
@@ -234,7 +222,7 @@
       <div id="trailerContainer"></div>
       <div id="estrellasSerie"></div>
       <div id="acciones">
-        <button id="agregarLista">Anadir a lista</button>
+        <button id="agregarLista">Agregar a lista</button>
         <button id="recordar">Recordatorio</button>
         <button id="verTrailer">Ver trailer</button>
       </div>
