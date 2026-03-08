@@ -16,7 +16,7 @@
       <button onclick="mostrarSeccion('peliculas')">Películas</button>
       <button onclick="mostrarSeccion('series')">Series</button>
       <button onclick="mostrarSeccion('agenda')">Agenda</button>
-      <button onclick="mostrarSeccion('miLista')">Mi Lista</button>
+      <button onclick="mostrarSeccion('miLista')">Mis Listas</button>
       <button onclick="mostrarSeccion('perfil')">Perfil</button>
       <button onclick="mostrarSeccion('buscar')">Buscar</button>
       <button onclick="mostrarSeccion('contacto')">Contacto</button>
@@ -53,18 +53,13 @@
             <option value="all">Todas las plataformas</option>
             <option value="netflix">Netflix</option>
             <option value="disneyplus">Disney+</option>
-            <option value="hbomax">HBO Max</option>
+            <option value="hbomax">Max</option>
             <option value="primevideo">Prime Video</option>
             <option value="appletv">Apple TV+</option>
             <option value="movistar">Movistar+</option>
             <option value="filmin">Filmin</option>
             <option value="skyshowtime">SkyShowtime</option>
-            <option value="rakutentv">Rakuten TV</option>
-            <option value="atresplayer">ATRESplayer</option>
-            <option value="mitele">Mitele</option>
             <option value="paramountplus">Paramount+</option>
-            <option value="peacock">Peacock</option>
-            <option value="hulu">Hulu</option>
           </select>
         </div>
       </div>
@@ -72,7 +67,7 @@
       <div id="agendaContainer"></div>
     </section>
 
-    <!-- MI LISTA -->
+    <!-- MIS LISTAS -->
     <section id="miLista" class="seccion"></section>
 
     <!-- PERFIL -->
@@ -80,27 +75,51 @@
       <div class="perfil-container">
         <h2>Tu perfil</h2>
         <div class="perfil-card">
+
+          <!-- Avatar -->
           <div class="perfil-avatar">
-            <div class="avatar-icon">👤</div>
+            <div class="avatar-wrap">
+              <span id="avatarEmoji" class="avatar-icon">👤</span>
+              <img id="avatarPreview" src="" alt="avatar" style="display:none;width:120px;height:120px;border-radius:60px;object-fit:cover;">
+            </div>
+            <div class="avatar-actions">
+              <label class="btn-perfil" style="cursor:pointer">
+                📷 Subir foto
+                <input type="file" accept="image/*" onchange="subirAvatarImagen(event)" style="display:none">
+              </label>
+            </div>
+            <div id="avatarEmojiSelector" class="avatar-emoji-selector"></div>
           </div>
+
           <div class="perfil-info">
-            <h3>Alias actual</h3>
+            <!-- Alias -->
+            <h3>Alias</h3>
             <div id="aliasActualDisplay" class="alias-display">No tienes alias configurado</div>
             <div class="perfil-acciones">
               <input id="aliasInput" class="alias-input" type="text" placeholder="Escribe tu alias">
-              <button class="btn-perfil" onclick="guardarAlias()">Guardar alias</button>
+              <button class="btn-perfil" onclick="guardarAlias()">Guardar</button>
             </div>
+
+            <!-- Bio -->
+            <h3>Bio</h3>
+            <textarea id="bioInput" class="bio-input" maxlength="160" placeholder="Cuéntanos algo sobre ti... (máx. 160 caracteres)"></textarea>
+            <button class="btn-perfil" onclick="guardarBio()" style="margin-top:0.5rem">Guardar bio</button>
+
+            <!-- Stats -->
             <div class="perfil-stats">
-              <p>📌 Items en Mi Lista: <span id="statsMiLista">0</span></p>
+              <p>📋 Listas creadas: <span id="statsListas">0</span></p>
+              <p>📌 Items en total: <span id="statsMiLista">0</span></p>
               <p>📅 Recordatorios: <span id="statsRecordatorios">0</span></p>
               <p>⭐ Series puntuadas: <span id="statsPuntuadas">0</span></p>
             </div>
+
+            <!-- Compartir perfil -->
             <h3>Comparte tu perfil</h3>
             <div class="compartir-box">
               <input id="enlaceCompartir" class="enlace-input" type="text" readonly>
               <button class="btn-copiar" onclick="copiarEnlacePerfil()">Copiar</button>
             </div>
-            <button class="btn-compartir" onclick="compartirLista()">Compartir Mi Lista</button>
+            <button class="btn-compartir" onclick="compartirLista()">📤 Compartir lista</button>
           </div>
         </div>
       </div>
@@ -124,16 +143,13 @@
         <h2>Contacto</h2>
         <div class="redes-sociales">
           <a class="red-social" href="#" target="_blank" rel="noopener noreferrer">
-            <span class="icono">🐦</span>
-            <span>Twitter</span>
+            <span class="icono">🐦</span><span>Twitter</span>
           </a>
           <a class="red-social" href="#" target="_blank" rel="noopener noreferrer">
-            <span class="icono">📸</span>
-            <span>Instagram</span>
+            <span class="icono">📸</span><span>Instagram</span>
           </a>
           <a class="red-social" href="#" target="_blank" rel="noopener noreferrer">
-            <span class="icono">🎬</span>
-            <span>TikTok</span>
+            <span class="icono">🎬</span><span>TikTok</span>
           </a>
         </div>
         <div class="contacto-info">
@@ -151,7 +167,6 @@
         </div>
         <div class="colabora">
           <p>⭐ Si te gusta el proyecto, ¡dale una estrella en GitHub!</p>
-          <p>¿Eres desarrollador? ¡Ayúdanos a mejorar SERIESTOPIA!</p>
           <a class="boton-github" href="#" target="_blank" rel="noopener noreferrer">Contribuir en GitHub</a>
         </div>
       </div>
@@ -159,11 +174,11 @@
 
     <!-- EXPORT / IMPORT -->
     <div id="exportImport">
-      <button onclick="exportarLista()">Exportar Mi Lista</button>
-      <label for="importFile" class="fake-file-btn">Importar Mi Lista</label>
+      <button onclick="exportarLista()">Exportar Listas</button>
+      <label for="importFile" class="fake-file-btn">Importar Lista</label>
       <input id="importFile" type="file" accept=".json" onchange="importarLista(event)">
       <button onclick="exportarAlertas()">Exportar Alertas</button>
-      <button onclick="compartirLista()">Compartir Mi Lista</button>
+      <button onclick="compartirLista()">Compartir Lista</button>
     </div>
 
   </main>
@@ -178,7 +193,7 @@
       <div id="trailerContainer"></div>
       <div id="estrellasSerie"></div>
       <div id="acciones">
-        <button id="agregarLista">➕ Añadir a mi lista</button>
+        <button id="agregarLista">➕ Añadir a lista</button>
         <button id="recordar">📌 Recordatorio</button>
         <button id="verTrailer">▶ Ver tráiler</button>
       </div>
@@ -186,6 +201,5 @@
   </div>
 
   <script src="script.js"></script>
-
 </body>
 </html>
